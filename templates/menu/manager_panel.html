@@ -1,0 +1,449 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}Manager Panel - Burger Bills{% endblock %}
+
+{% block extra_css %}
+<style>
+    .manager-header {
+        background: linear-gradient(135deg, #004E89 0%, #FF6B35 100%);
+        color: white;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+    }
+
+    .manager-header h1 {
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .logout-btn {
+        background: white;
+        color: #FF6B35;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .logout-btn:hover {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+    }
+
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+        border: none;
+        padding: 1.5rem;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .card-title {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.3rem;
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #FF6B35;
+        box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        outline: none;
+    }
+
+    .btn-add {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .btn-add:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+    }
+
+    .staff-table {
+        margin-top: 2rem;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead {
+        background: #f8f9fa;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        color: #333;
+        padding: 1rem;
+        border: none;
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-color: #e0e0e0;
+    }
+
+    .table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .staff-badge {
+        display: inline-block;
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .btn-delete {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .btn-delete:hover {
+        background: #c0392b;
+        transform: translateY(-2px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 1rem;
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .stats-card .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #FF6B35;
+        margin: 0.5rem 0;
+    }
+
+    .stats-card .label {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+
+        .table thead th,
+        .table tbody td {
+            padding: 0.7rem;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-row > div {
+            flex: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="manager-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1><i class="fas fa-crown"></i> Manager Panel</h1>
+            <p class="mb-0">Manage your staff members and restaurant operations</p>
+        </div>
+        <a href="{% url 'index' %}" class="logout-btn">
+            <i class="fas fa-home"></i> Home
+        </a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="label">Total Staff Members</div>
+            <div class="number">{{ total_staff }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Create New Staff User -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="fas fa-user-plus"></i> Create New Staff Member
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="createStaffForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="username">
+                            <i class="fas fa-user"></i> Username *
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               placeholder="e.g., john_staff" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i> Password *
+                        </label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="Enter a secure password" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="first_name">
+                            <i class="fas fa-id-card"></i> First Name
+                        </label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" 
+                               placeholder="John">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="last_name">
+                            <i class="fas fa-id-card"></i> Last Name
+                        </label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" 
+                               placeholder="Doe">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">
+                    <i class="fas fa-envelope"></i> Email
+                </label>
+                <input type="email" class="form-control" id="email" name="email" 
+                       placeholder="john@burgerbills.com">
+            </div>
+
+            <button type="submit" class="btn-add">
+                <i class="fas fa-plus-circle"></i> Create Staff Member
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Staff Members List -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="fas fa-users"></i> Staff Members ({{ total_staff }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if staff_users %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staff_users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ staff.username }}</strong>
+                                </td>
+                                <td>{{ staff.first_name }} {{ staff.last_name }}</td>
+                                <td>
+                                    {% if staff.email %}
+                                        {{ staff.email }}
+                                    {% else %}
+                                        <span style="color: #999;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="staff-badge">
+                                        <i class="fas fa-check-circle"></i> Active
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-delete" 
+                                            onclick="deleteStaffUser({{ staff.id }}, '{{ staff.username }}')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-users"></i>
+                <h3>No Staff Members Yet</h3>
+                <p>Create your first staff member using the form above!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.getElementById('createStaffForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{% url "create_staff_user" %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error creating staff member', 'error');
+            console.error(error);
+        });
+    });
+
+    function deleteStaffUser(userId, username) {
+        if (!confirm(`Are you sure you want to delete staff member "${username}"?`)) {
+            return;
+        }
+
+        fetch(`/manager/delete-staff-user/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error deleting staff member', 'error');
+            console.error(error);
+        });
+    }
+
+    function showNotification(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert" 
+                 style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', alertHtml);
+        
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                alerts[alerts.length - 1].remove();
+            }
+        }, 3000);
+    }
+</script>
+{% endblock %}

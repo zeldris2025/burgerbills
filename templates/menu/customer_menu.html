@@ -1,0 +1,1405 @@
+{% extends 'menu/customer_base.html' %}
+{% load static %}
+
+{% block title %}Menu - Table {{ table.number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Promotions Marquee Banner */
+    .promotions-banner {
+        background: linear-gradient(90deg, #FF6B35 0%, #004E89 50%, #FF6B35 100%);
+        color: white;
+        padding: 0.8rem 0;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    }
+
+    .promotions-content {
+        display: flex;
+        animation: scroll 25s linear infinite;
+        white-space: nowrap;
+    }
+
+    .promotion-item {
+        padding: 0 3rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .promotion-item::before {
+        content: "★";
+        font-size: 1.3rem;
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(100%);
+        }
+        100% {
+            transform: translateX(-100%);
+        }
+    }
+
+    /* Hot Deals Section */
+    .hot-deals-section {
+        margin-bottom: 3rem;
+    }
+
+    .hot-deals-title {
+        font-size: 1.1rem;
+        font-weight: 900;
+        margin-bottom: 2rem;
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #FF1744 0%, #FF6E40 50%, #FFB300 100%);
+        border-radius: 12px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        box-shadow: 0 15px 40px rgba(255, 23, 68, 0.3);
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        color: white;
+        animation: slideInDown 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .hot-word {
+        color: #ffffff;
+        font-weight: 900;
+        font-size: 1.2rem;
+        text-shadow: 0 0 15px rgba(255, 23, 68, 1), 2px 2px 4px rgba(0, 0, 0, 0.4);
+        letter-spacing: 1px;
+        animation: hotPulse 1.5s ease-in-out infinite;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    .hot-word::before,
+    .hot-word::after {
+        content: "🔥";
+        font-size: 1.2rem;
+        animation: flameBounce 1s ease-in-out infinite;
+        display: inline-block;
+    }
+
+    .hot-word::before {
+        animation-delay: 0s;
+    }
+
+    .hot-word::after {
+        animation-delay: 0.2s;
+    }
+
+    @keyframes hotPulse {
+        0%, 100% {
+            text-shadow: 0 0 15px rgba(255, 23, 68, 1), 2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        50% {
+            text-shadow: 0 0 25px rgba(255, 23, 68, 1), 0 0 15px rgba(255, 107, 53, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+    }
+
+    @keyframes flameBounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-3px);
+        }
+    }
+
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .hot-deals-title::before {
+        content: "⭐";
+        font-size: 1.3rem;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .hot-deals-title::after {
+        content: "⭐";
+        font-size: 1.3rem;
+        animation: pulse 2s ease-in-out infinite 0.5s;
+    }
+
+    .hot-deals-container {
+        display: flex;
+        gap: 2rem;
+        animation: slideShowScroll 45s linear infinite;
+        padding: 0;
+        margin-bottom: 2rem;
+    }
+
+    .hot-deals-wrapper {
+        overflow-x: auto;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+
+    .hot-deals-item {
+        min-width: 280px;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .hot-deals-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        z-index: 20;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .menu-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .category-sidebar {
+        position: sticky;
+        top: 80px;
+        height: fit-content;
+        z-index: 100;
+        transition: all 0.3s ease;
+        max-height: 100vh;
+        overflow-y: auto;
+        opacity: 1;
+        max-width: 250px;
+        width: 250px;
+    }
+
+    .category-sidebar.collapsed {
+        display: none;
+    }
+
+    .category-list {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .category-list .sidebar-header {
+        display: block;
+        background: linear-gradient(135deg, #FF6B35, #F7931E);
+        padding: 0;
+        margin: 0;
+    }
+
+    .category-list .menu-toggle-btn {
+        border-radius: 10px 10px 0 0;
+        margin: 0;
+        padding: 0.8rem 1.5rem;
+        box-shadow: none;
+    }
+
+    .category-list .menu-toggle-btn:hover {
+        transform: none;
+    }
+
+    .category-list .menu-toggle-btn:active {
+        transform: scale(0.98);
+    }
+
+    .category-item {
+        padding: 1.2rem;
+        border-bottom: 1px solid #e0e0e0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+        font-weight: 500;
+    }
+
+    .category-item:last-child {
+        border-bottom: none;
+    }
+
+    .category-item:hover {
+        background-color: #f5f5f5;
+        border-left-color: #FF6B35;
+    }
+
+    .category-item.active {
+        background-color: #FF6B35;
+        color: white;
+        border-left-color: #FF6B35;
+    }
+
+    .category-icon {
+        font-size: 1.5rem;
+        margin-right: 0.5rem;
+    }
+
+    .menu-items-container {
+        display: flex;
+        gap: 2rem;
+        animation: slideShowScroll 30s linear infinite;
+        padding: 0;
+    }
+
+    @keyframes slideShowScroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(0);
+        }
+    }
+
+    /* Double the items for seamless loop */
+    .menu-items-container.slideshow-active {
+        animation: slideShowScroll 40s linear infinite;
+    }
+
+    .slideshow-container {
+        overflow: hidden;
+        width: 100%;
+        margin: 2rem 0;
+    }
+
+    .menu-item-card {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        animation: slideInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+        min-width: 280px;
+        flex-shrink: 0;
+    }
+
+    .menu-item-card:nth-child(1) { animation-delay: 0.1s; }
+    .menu-item-card:nth-child(2) { animation-delay: 0.2s; }
+    .menu-item-card:nth-child(3) { animation-delay: 0.3s; }
+    .menu-item-card:nth-child(4) { animation-delay: 0.4s; }
+    .menu-item-card:nth-child(5) { animation-delay: 0.5s; }
+    .menu-item-card:nth-child(6) { animation-delay: 0.6s; }
+    .menu-item-card:nth-child(n+7) { animation-delay: 0.7s; }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(80px) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .menu-item-card:hover {
+        transform: translateY(-12px) scale(1.05);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .menu-item-image {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #FF6B35 0%, #004E89 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .menu-item-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .menu-item-image .placeholder {
+        font-size: 4rem;
+        opacity: 0.7;
+    }
+
+    .menu-item-tags {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 5px;
+    }
+
+    .badge-tag {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-vegetarian {
+        color: #27ae60;
+    }
+
+    .badge-spicy {
+        color: #e74c3c;
+    }
+
+    .menu-item-content {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .menu-item-header {
+        margin-bottom: 0.8rem;
+    }
+
+    .menu-item-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.3rem;
+    }
+
+    .menu-item-description {
+        font-size: 0.85rem;
+        color: #666;
+        line-height: 1.4;
+        margin-bottom: 1rem;
+        flex-grow: 1;
+    }
+
+    .menu-item-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .menu-item-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #FF6B35;
+    }
+
+    .menu-item-rating {
+        color: #f39c12;
+        font-size: 0.9rem;
+    }
+
+    .add-to-cart-btn {
+        background-color: #FF6B35;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .add-to-cart-btn:hover {
+        background-color: #004E89;
+        transform: scale(1.05);
+    }
+
+    .add-to-cart-btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+        transform: scale(1);
+    }
+
+    .menu-toggle-btn {
+        background: linear-gradient(135deg, #FF6B35, #F7931E);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        width: auto;
+        justify-content: flex-start;
+    }
+
+    .menu-toggle-btn:hover {
+        background: linear-gradient(135deg, #004E89 0%, #003d6b 100%);
+        transform: scale(1.02);
+        box-shadow: 0 6px 20px rgba(0, 78, 137, 0.3);
+    }
+
+    .menu-toggle-btn:active {
+        transform: scale(0.98);
+    }
+
+    .toggle-icon {
+        transition: transform 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .menu-toggle-btn.active .toggle-icon {
+        transform: rotate(0deg);
+    }
+
+    .table-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #FF6B35, #F7931E);
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .menu-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(255, 107, 53, 0.05) 0%, rgba(0, 78, 137, 0.05) 100%);
+        border-radius: 12px;
+        border-left: 4px solid #FF6B35;
+    }
+
+    .menu-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex: 1;
+    }
+
+    .menu-header-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .menu-header-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .menu-header-subtitle {
+        font-size: 0.9rem;
+        color: #666;
+        margin: 0;
+    }
+
+    .welcome-message {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #FF6B35;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .decorative-divider {
+        width: 2px;
+        height: 50px;
+        background: linear-gradient(180deg, transparent, #FF6B35, transparent);
+        border-radius: 2px;
+    }
+
+    .menu-header-right {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 0 1rem;
+    }
+
+    .highlight-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 25px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        font-weight: 600;
+        color: #FF6B35;
+    }
+
+    .highlight-badge i {
+        font-size: 1.3rem;
+    }
+
+    .logo-in-header {
+        height: 50px;
+        width: auto;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .menu-toggle-btn {
+        display: none;
+    }
+
+    .menu-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex: 1;
+    }
+
+    /* Mobile view - show menu button, hide logo */
+    @media (max-width: 768px) {
+        .logo-in-header {
+            display: none !important;
+        }
+
+        .menu-toggle-btn {
+            display: flex !important;
+        }
+
+        .menu-header-bar {
+            flex-direction: row;
+            gap: 0.5rem;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0;
+        }
+
+        .menu-header-left {
+            width: auto;
+            justify-content: flex-start;
+            flex: 0 0 auto;
+            gap: 0.5rem;
+        }
+
+        .menu-header-content {
+            display: none !important;
+        }
+
+        .menu-header-right {
+            flex: 1;
+            justify-content: flex-end;
+            gap: 0.3rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .highlight-badge {
+            padding: 0.5rem 0.6rem;
+            font-size: 0.8rem;
+            flex-shrink: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            gap: 0.4rem;
+        }
+
+        .highlight-badge i {
+            font-size: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .decorative-divider {
+            display: none !important;
+        }
+
+        .category-sidebar {
+            position: fixed !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: calc(100vh - 150px) !important;
+            z-index: 999 !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .category-sidebar.collapsed {
+            display: none !important;
+        }
+
+        .category-list {
+            border-radius: 0;
+            box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.15);
+            overflow-y: auto;
+        }
+    }
+
+    /* Desktop/Tablet view - show logo, hide menu button */
+    @media (min-width: 769px) {
+        .logo-in-header {
+            display: block !important;
+        }
+
+        .menu-toggle-btn {
+            display: none !important;
+        }
+
+        .menu-header-left {
+            flex: 0 0 auto;
+            gap: 1rem;
+            width: auto;
+        }
+
+        .menu-header-content {
+            display: flex !important;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .decorative-divider {
+            display: block !important;
+        }
+
+        .category-sidebar {
+            position: sticky !important;
+            top: 0 !important;
+            left: auto !important;
+            right: auto !important;
+            width: 250px !important;
+            max-width: 250px !important;
+            height: fit-content !important;
+            max-height: 100vh !important;
+            z-index: 100 !important;
+            border-radius: 10px !important;
+            background: white !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        }
+    }
+
+    .cart-button-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .cart-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #e74c3c;
+        color: white;
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    }
+
+    .view-cart-btn {
+        background: linear-gradient(135deg, #004E89 0%, #003d6b 100%);
+        color: white;
+        padding: 1rem 1.8rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0, 78, 137, 0.3);
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        position: relative;
+    }
+
+    .view-cart-btn:hover {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 35px rgba(255, 107, 53, 0.4);
+    }
+
+    .view-cart-btn:active {
+        transform: translateY(-2px);
+    }
+
+    .category-section {
+        margin-bottom: 3rem;
+    }
+
+    .category-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #FF6B35;
+        display: inline-block;
+    }
+
+    .unavailable-badge {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        z-index: 10;
+    }
+
+    .menu-item-card.unavailable {
+        opacity: 0.7;
+    }
+
+    @media (max-width: 768px) {
+        .menu-container {
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-header {
+            display: none;
+        }
+
+        .category-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .category-item {
+            border-bottom: 1px solid #e0e0e0;
+            border-right: none;
+            white-space: normal;
+            padding: 1rem;
+        }
+
+        .slideshow-container {
+            width: 100% !important;
+            margin: 1rem 0 !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scroll-behavior: smooth !important;
+            max-width: 100vw !important;
+            position: relative !important;
+        }
+
+        .menu-items-container {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 1rem !important;
+            animation: slideShowScroll 40s linear infinite !important;
+            transform: none !important;
+            flex: none !important;
+            overflow: hidden !important;
+            padding: 0.5rem !important;
+            width: fit-content !important;
+        }
+
+        .menu-item-card {
+            min-width: 220px !important;
+            flex-shrink: 0 !important;
+            max-width: 220px !important;
+        }
+
+        .hot-deals-wrapper {
+            margin-bottom: 2rem !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scroll-behavior: smooth !important;
+            max-width: 100vw !important;
+            position: relative !important;
+        }
+
+        .hot-deals-container {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 1rem !important;
+            animation: slideShowScroll 45s linear infinite !important;
+            transform: none !important;
+            flex: none !important;
+            overflow: hidden !important;
+            padding: 0.5rem !important;
+            width: fit-content !important;
+        }
+
+        .hot-deals-item {
+            min-width: 320px !important;
+            flex-shrink: 0 !important;
+            max-width: 320px !important;
+        }
+
+        /* Hide scrollbar but keep scrolling functional */
+        .slideshow-container::-webkit-scrollbar,
+        .hot-deals-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+        .slideshow-container,
+        .hot-deals-wrapper {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .cart-button-container {
+            bottom: 1rem;
+            right: 1rem;
+        }
+
+        .view-cart-btn {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        h1 {
+            flex: 1;
+            margin-bottom: 0;
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .category-item {
+            border-bottom: 1px solid #e0e0e0;
+            border-right: none;
+            white-space: nowrap;
+            padding: 1rem;
+        }
+
+        .menu-container {
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .category-sidebar.collapsed {
+            display: none;
+        }
+
+        .menu-header-bar {
+            flex-direction: row;
+            gap: 2rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .menu-header-right {
+            flex-direction: row;
+            gap: 1.5rem;
+            width: auto;
+            padding: 0 1rem;
+        }
+
+        .slideshow-container {
+            width: 100%;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+
+        .menu-items-container {
+            display: flex !important;
+            gap: 2rem;
+            animation: slideShowScroll 40s linear infinite;
+        }
+
+        .menu-item-card {
+            min-width: 280px;
+            flex-shrink: 0;
+        }
+
+        .hot-deals-wrapper {
+            width: 100%;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .hot-deals-container {
+            display: flex !important;
+            gap: 2rem;
+            animation: slideShowScroll 45s linear infinite;
+            padding: 0;
+        }
+
+        .hot-deals-item {
+            min-width: 280px !important;
+            flex-shrink: 0 !important;
+        }
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Promotions Banner -->
+<div class="promotions-banner">
+    <div class="promotions-content">
+        <div class="promotion-item">🎉 50% OFF on Burgers</div>
+        <div class="promotion-item">🍟 Free Fries with Drinks</div>
+        <div class="promotion-item">🎂 Buy 1 Dessert Get 1 Free</div>
+        <div class="promotion-item">⏰ Happy Hour: 3PM - 6PM</div>
+        <div class="promotion-item">🎉 50% OFF on Burgers</div>
+        <div class="promotion-item">🍟 Free Fries with Drinks</div>
+        <div class="promotion-item">🎂 Buy 1 Dessert Get 1 Free</div>
+        <div class="promotion-item">⏰ Happy Hour: 3PM - 6PM</div>
+    </div>
+</div>
+
+<!-- Menu Header Bar -->
+<div class="menu-header-bar">
+    <div class="menu-header-left">
+        {% load static %}
+        <img src="{% static 'images/logo.png' %}" alt="Burger Bills Logo" class="logo-in-header">
+        <button id="menuToggleBtn" class="menu-toggle-btn active" onclick="toggleCategorySidebar()" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);">
+            <span class="toggle-icon">☰</span>
+            Menu
+        </button>
+        <div class="decorative-divider"></div>
+        <div class="menu-header-content">
+            <h2 class="menu-header-title">Welcome to Burger Bills</h2>
+            <p class="menu-header-subtitle">Tap Menu to browse our delicious items</p>
+        </div>
+    </div>
+    <div class="menu-header-right">
+        <span class="highlight-badge">
+            <i class="fas fa-table"></i> Table {{ table.number }}
+        </span>
+        <span class="highlight-badge" style="color: #27ae60;">
+            <i class="fas fa-check-circle"></i> Ready to Order
+        </span>
+    </div>
+</div>
+
+<div class="menu-container">
+    <!-- Category Sidebar -->
+    <div class="category-sidebar">
+        <div class="category-list">
+            <div class="category-item active" data-category="hot-deals" onclick="scrollToSection('hot-deals-section')">
+                <span class="category-icon">🔥</span>
+                <span>Hot Deals</span>
+            </div>
+            {% for category in categories %}
+                {% if category.name != "New & Hot Deals" %}
+                <div class="category-item active" data-category="category-{{ category.id }}" onclick="scrollToSection('category-{{ category.id }}')">
+                    <span class="category-icon">{{ category.icon }}</span>
+                    <span>{{ category.name }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Menu Items -->
+    <div>
+        <!-- Hot Deals Section -->
+        {% if hot_deals %}
+            <div class="hot-deals-section" id="hot-deals-section">
+                <div class="hot-deals-title">
+                    NEW <span class="hot-word">🔥 HOT 🔥</span> DEALS
+                </div>
+                <div class="hot-deals-wrapper">
+                    <div class="hot-deals-container">
+                        {% for hot_deal in hot_deals %}
+                            <div class="menu-item-card hot-deals-item">
+                                <div class="hot-deals-badge">HOT</div>
+                                <div class="menu-item-image">
+                                    {% if hot_deal.image %}
+                                        <img src="{{ hot_deal.image.url }}" alt="{{ hot_deal.name }}">
+                                    {% else %}
+                                        <span class="placeholder">🍔</span>
+                                    {% endif %}
+                                    <div class="menu-item-tags">
+                                        {% if hot_deal.is_vegetarian %}
+                                            <span class="badge-tag badge-vegetarian">🌱 Vegetarian</span>
+                                        {% endif %}
+                                        {% if hot_deal.is_spicy %}
+                                            <span class="badge-tag badge-spicy">🌶️ Spicy</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="menu-item-content">
+                                    <div class="menu-item-header">
+                                        <div class="menu-item-name">{{ hot_deal.name }}</div>
+                                        {% if hot_deal.rating %}
+                                            <div class="menu-item-rating">
+                                                <i class="fas fa-star"></i> {{ hot_deal.rating }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="menu-item-description">
+                                        {{ hot_deal.description|truncatewords:15 }}
+                                    </div>
+
+                                    <div class="menu-item-footer">
+                                        <span class="menu-item-price">${{ hot_deal.price }}</span>
+                                        <button class="add-to-cart-btn" onclick="addToCart({{ hot_deal.id }}, '{{ hot_deal.name }}')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Categories Section -->
+        {% for category in categories %}
+            {% if category.name != "New & Hot Deals" %}
+            <div class="category-section" id="category-{{ category.id }}">
+                <div class="category-title">
+                    <span class="category-icon">{{ category.icon }}</span> {{ category.name }}
+                </div>
+
+                <div class="slideshow-container">
+                    <div class="menu-items-container slideshow-active">
+                        {% for item in category.items.all %}
+                            {% if item.is_available and not item.hot_deal %}
+                                <div class="menu-item-card">
+                                    <div class="menu-item-image">
+                                        {% if item.image %}
+                                            <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                                        {% else %}
+                                            <span class="placeholder">🍔</span>
+                                        {% endif %}
+                                    <div class="menu-item-tags">
+                                        {% if item.is_vegetarian %}
+                                            <span class="badge-tag badge-vegetarian">🌱 Vegetarian</span>
+                                        {% endif %}
+                                        {% if item.is_spicy %}
+                                            <span class="badge-tag badge-spicy">🌶️ Spicy</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="menu-item-content">
+                                    <div class="menu-item-header">
+                                        <div class="menu-item-name">{{ item.name }}</div>
+                                        {% if item.rating %}
+                                            <div class="menu-item-rating">
+                                                <i class="fas fa-star"></i> {{ item.rating }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="menu-item-description">
+                                        {{ item.description|truncatewords:15 }}
+                                    </div>
+
+                                    <div class="menu-item-footer">
+                                        <span class="menu-item-price">${{ item.price }}</span>
+                                        <button class="add-to-cart-btn" onclick="addToCart({{ item.id }}, '{{ item.name }}')">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="menu-item-card unavailable">
+                                <div class="menu-item-image">
+                                    <span class="unavailable-badge">Out of Stock</span>
+                                    {% if item.image %}
+                                        <img src="{{ item.image.url }}" alt="{{ item.name }}">
+                                    {% else %}
+                                        <span class="placeholder">🍔</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="menu-item-content">
+                                    <div class="menu-item-header">
+                                        <div class="menu-item-name">{{ item.name }}</div>
+                                    </div>
+
+                                    <div class="menu-item-description">
+                                        {{ item.description|truncatewords:15 }}
+                                    </div>
+
+                                    <div class="menu-item-footer">
+                                        <span class="menu-item-price">${{ item.price }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                </div>
+            </div>
+            {% endif %}
+        {% empty %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No menu items available at the moment. Please check back later.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add to Cart Modal -->
+<div class="modal fade" id="addToCartModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="modalTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1.5rem;">
+                    <label>Quantity:</label>
+                    <input type="number" id="quantityInput" value="1" min="1" class="form-control" style="width: 100px;">
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <label>Special Requests (Optional):</label>
+                    <textarea id="specialRequests" class="form-control" rows="3" placeholder="e.g., No onions, Extra cheese"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmAddToCart()">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedItemId = null;
+    let sidebarOpen = true;
+
+    // Initialize slideshow - no animation, just display items
+    function initializeSlideshow() {
+        // Disable any animations since we're not duplicating
+        document.querySelectorAll('.menu-items-container.slideshow-active, .hot-deals-container').forEach(container => {
+            if (container.hasAttribute('data-duplicated')) return;
+            container.style.animation = 'none';
+            container.setAttribute('data-duplicated', 'true');
+        });
+    }
+
+    // Initialize sidebar state based on screen size
+    function initializeSidebar() {
+        const sidebar = document.querySelector('.category-sidebar');
+        const toggleBtn = document.getElementById('menuToggleBtn') || document.getElementById('mobileMenuToggleBtn');
+        
+        if (window.innerWidth > 768) {
+            // Desktop: Show sidebar by default
+            sidebarOpen = true;
+            sidebar.classList.remove('collapsed');
+            if (toggleBtn) toggleBtn.classList.add('active');
+        } else {
+            // Mobile: Hide sidebar by default
+            sidebarOpen = false;
+            sidebar.classList.add('collapsed');
+            if (toggleBtn) toggleBtn.classList.remove('active');
+        }
+    }
+
+    function toggleCategorySidebar() {
+        // Toggle on all screen sizes
+        const sidebar = document.querySelector('.category-sidebar');
+        const toggleBtn = document.getElementById('menuToggleBtn') || document.getElementById('mobileMenuToggleBtn');
+        
+        sidebarOpen = !sidebarOpen;
+        
+        if (sidebarOpen) {
+            sidebar.classList.remove('collapsed');
+            if (toggleBtn) toggleBtn.classList.add('active');
+        } else {
+            sidebar.classList.add('collapsed');
+            if (toggleBtn) toggleBtn.classList.remove('active');
+        }
+    }
+
+    function scrollToSection(sectionId) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function initializeInfiniteScroll() {
+        // The CSS animation handles infinite scrolling for hot deals via slideShowScroll animation
+        // We don't need JavaScript scroll-loop as it causes jarring resets
+        // The animation repeats smoothly with 'infinite' keyword
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            // Switching to desktop
+            const sidebar = document.querySelector('.category-sidebar');
+            const toggleBtn = document.getElementById('menuToggleBtn') || document.getElementById('mobileMenuToggleBtn');
+            sidebarOpen = true;
+            sidebar.classList.remove('collapsed');
+            if (toggleBtn) toggleBtn.classList.add('active');
+        }
+    });
+
+    function addToCart(itemId, itemName) {
+        selectedItemId = itemId;
+        document.getElementById('modalTitle').textContent = `Add ${itemName} to Cart`;
+        document.getElementById('quantityInput').value = 1;
+        document.getElementById('specialRequests').value = '';
+        new bootstrap.Modal(document.getElementById('addToCartModal')).show();
+    }
+
+    function confirmAddToCart() {
+        const quantity = parseInt(document.getElementById('quantityInput').value);
+        const specialRequests = document.getElementById('specialRequests').value;
+        const tableNumber = {{ table.number }};
+
+        const data = {
+            menu_item_id: selectedItemId,
+            quantity: quantity,
+            special_requests: specialRequests
+        };
+
+        fetch(`/table/${tableNumber}/add-to-order/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showToast(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addToCartModal')).hide();
+                
+                // Update cart badge if exists
+                setTimeout(() => {
+                    location.reload();
+                }, 800);
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showToast('Error adding to cart', 'danger');
+        });
+    }
+
+    function showToast(message, type) {
+        const toastHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', toastHtml);
+        
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                alerts[alerts.length - 1].remove();
+            }
+        }, 3000);
+    }
+
+    // Smooth scroll to category
+    document.querySelectorAll('.category-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const categoryId = this.getAttribute('data-category');
+            const element = document.getElementById(categoryId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+                document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Close sidebar on mobile after selecting
+                if (window.innerWidth <= 768) {
+                    sidebarOpen = false;
+                    document.querySelector('.category-sidebar').classList.add('collapsed');
+                    const toggleBtn = document.getElementById('menuToggleBtn') || document.getElementById('mobileMenuToggleBtn');
+                    if (toggleBtn) toggleBtn.classList.remove('active');
+                }
+            }
+        });
+    });
+
+    // Initialize sidebar and slideshow when page loads and on window load to ensure DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSidebar();
+            initializeSlideshow();
+            initializeInfiniteScroll();
+        });
+    } else {
+        initializeSidebar();
+        initializeSlideshow();
+        initializeInfiniteScroll();
+    }
+    window.addEventListener('load', () => {
+        initializeSidebar();
+        initializeSlideshow();
+        initializeInfiniteScroll();
+    });
+</script>
+
+<!-- Floating Cart Button (Fixed to Bottom Right) -->
+{% if current_order %}
+<div class="cart-button-container">
+    <a href="{% url 'view_cart' table_number=table.number %}" class="view-cart-btn">
+        <i class="fas fa-shopping-cart"></i> View Cart
+        <span class="cart-badge">{{ current_order.items.count }}</span>
+    </a>
+</div>
+{% endif %}
+
+{% endblock %}

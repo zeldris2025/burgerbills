@@ -1,0 +1,247 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}All Orders{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-section {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #ddd;
+        background: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+        border-color: #FF6B35;
+        background: #FF6B35;
+        color: white;
+    }
+
+    .orders-table {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, #FF6B35 0%, #004E89 100%);
+        color: white;
+    }
+
+    .table th {
+        border: none;
+        font-weight: 700;
+        padding: 1rem;
+    }
+
+    .table td {
+        border: none;
+        padding: 1rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .table tbody tr:hover {
+        background: #f9f9f9;
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-pending {
+        background: #ffe0e0;
+        color: #e74c3c;
+    }
+
+    .status-confirmed {
+        background: #fff3cd;
+        color: #f39c12;
+    }
+
+    .status-preparing {
+        background: #fff3cd;
+        color: #f39c12;
+    }
+
+    .status-ready {
+        background: #d4edda;
+        color: #27ae60;
+    }
+
+    .status-completed {
+        background: #d4edda;
+        color: #27ae60;
+    }
+
+    .status-cancelled {
+        background: #ddd;
+        color: #666;
+    }
+
+    .order-number {
+        font-weight: 700;
+        color: #FF6B35;
+    }
+
+    .price {
+        font-weight: 700;
+        color: #FF6B35;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #FF6B35;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: #004E89;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+        .table {
+            font-size: 0.9rem;
+        }
+
+        .table th, .table td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .filter-section {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+
+        .filter-btn {
+            white-space: nowrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1><i class="fas fa-list"></i> All Orders</h1>
+
+<!-- Filter Buttons -->
+<div class="filter-section">
+    <a href="{% url 'all_orders' %}" class="filter-btn {% if not selected_status %}active{% endif %}">
+        All Orders
+    </a>
+    {% for status, label in status_choices %}
+        <a href="?status={{ status }}" class="filter-btn {% if selected_status == status %}active{% endif %}">
+            {{ label }}
+        </a>
+    {% endfor %}
+</div>
+
+<!-- Orders Table -->
+{% if orders %}
+    <div class="orders-table">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Table</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td class="order-number">{{ order.order_number }}</td>
+                        <td>Table {{ order.table.number }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status }}">
+                                {% if order.status == 'pending' %}Pending
+                                {% elif order.status == 'confirmed' %}Confirmed
+                                {% elif order.status == 'preparing' %}Preparing
+                                {% elif order.status == 'ready' %}Ready
+                                {% elif order.status == 'completed' %}Completed
+                                {% else %}{{ order.status|title }}{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ order.items.count }} items</td>
+                        <td class="price">${{ order.total_amount }}</td>
+                        <td>{{ order.created_at|date:"M d H:i" }}</td>
+                        <td>
+                            <button class="btn-sm btn-edit" onclick="showOrderDetails({{ order.id }})">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No orders found</p>
+    </div>
+{% endif %}
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showOrderDetails(orderId) {
+        // Placeholder - would fetch and display order details
+        alert('View order: ' + orderId);
+    }
+</script>
+{% endblock %}

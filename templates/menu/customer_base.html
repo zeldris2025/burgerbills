@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Burger Bills - Restaurant Menu{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF6B35;
+            --secondary-color: #004E89;
+            --dark-color: #1A1A1A;
+            --light-color: #F5F5F5;
+            --accent-color: #F7931E;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+        }
+
+        .navbar .container-fluid {
+            position: relative;
+            min-height: 50px;
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white !important;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand i {
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        .navbar-brand-copy {
+            display: flex;
+            flex-direction: column;
+            line-height: 1;
+        }
+
+        .navbar-brand-copy strong {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.35rem;
+            white-space: nowrap;
+        }
+
+        .navbar-brand-copy small {
+            margin-top: 0.3rem;
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 0.5rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .restaurant-navbar-heading {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            color: white;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+        }
+
+        .restaurant-navbar-heading.table-number-badge {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            place-items: center;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            background: rgba(20, 20, 20, 0.88);
+            box-shadow: 0 0 0 3px var(--accent-color), 0 8px 18px rgba(0, 0, 0, 0.28);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .container-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        h1, h2, h3 {
+            color: var(--dark-color);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 5px;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+        }
+
+        .table-info-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Hide navbar for customer view */
+        .navbar {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.4rem;
+            }
+
+            .restaurant-navbar-heading strong {
+                font-size: 1rem;
+            }
+
+            .restaurant-navbar-heading.table-number-badge {
+                width: 40px;
+                height: 40px;
+                font-size: 0.95rem;
+            }
+
+            .container-main {
+                padding: 1rem;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Clean header for customers - no login button -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                {% load static %}
+                <img src="{% static 'images/logo.png' %}" alt="Burger Bills Logo" style="height: 50px; width: auto;">
+                <span class="navbar-brand-copy">
+                    <strong>Burger Bills</strong>
+                    <small>Service Delicious Food</small>
+                </span>
+            </a>
+            <div class="restaurant-navbar-heading table-number-badge" aria-label="Table {{ table.number }}">{{ table.number }}</div>
+        </div>
+    </nav>
+
+    <!-- Main content area -->
+    <div class="container-main">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- No footer for customer view - cleaner experience -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,309 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reports-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .report-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .report-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .report-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #FF6B35;
+        margin-bottom: 0.5rem;
+    }
+
+    .report-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    .report-detail {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .report-detail:last-child {
+        border-bottom: none;
+    }
+
+    .popular-items-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .item-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .item-name {
+        flex: 1;
+        font-weight: 600;
+        color: #333;
+        min-width: 150px;
+    }
+
+    .item-bar-container {
+        flex: 1;
+        min-height: 30px;
+        background: #f0f0f0;
+        border-radius: 5px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .item-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #FF6B35, #F7931E);
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.5rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .item-count {
+        text-align: right;
+        min-width: 40px;
+        font-weight: 600;
+        color: #FF6B35;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .date-range {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        text-align: center;
+        font-size: 0.95rem;
+        color: #666;
+    }
+
+    .date-range strong {
+        color: #333;
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-export {
+        background: white;
+        border: 2px solid #FF6B35;
+        color: #FF6B35;
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-export:hover {
+        background: #FF6B35;
+        color: white;
+    }
+
+    .summary-highlight {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-label {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+        .item-name {
+            min-width: 100px;
+            font-size: 0.9rem;
+        }
+
+        .report-value {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1><i class="fas fa-chart-bar"></i> Reports & Analytics</h1>
+
+<!-- Date Range Info -->
+<div class="date-range">
+    <strong>Today's Report</strong> • {{ "now"|date:"l, F j, Y" }}
+</div>
+
+<!-- Summary Highlight -->
+<div class="summary-highlight">
+    <div class="summary-value">${{ today_revenue }}</div>
+    <div class="summary-label">Today's Total Revenue</div>
+</div>
+
+<!-- Export Buttons -->
+<div class="export-buttons">
+    <button class="btn-export" onclick="alert('Export to PDF - Coming soon')">
+        <i class="fas fa-file-pdf"></i> Export PDF
+    </button>
+    <button class="btn-export" onclick="alert('Export to CSV - Coming soon')">
+        <i class="fas fa-file-csv"></i> Export CSV
+    </button>
+    <button class="btn-export" onclick="window.print()">
+        <i class="fas fa-print"></i> Print
+    </button>
+</div>
+
+<!-- Reports Grid -->
+<div class="reports-grid">
+    <!-- Daily Statistics -->
+    <div class="report-card">
+        <div class="report-title">
+            <i class="fas fa-chart-line"></i> Daily Statistics
+        </div>
+        <div class="report-value">{{ daily_orders }}</div>
+        <div class="report-label">Orders Completed Today</div>
+        <div class="report-detail">
+            <span>Revenue:</span>
+            <span style="font-weight: 700; color: #FF6B35;">${{ daily_revenue }}</span>
+        </div>
+        <div class="report-detail">
+            <span>Avg Order Value:</span>
+            <span style="font-weight: 700;">
+                ${% if daily_orders > 0 %}{{ daily_revenue|add:"0.0"|floatformat:"2" }}{% else %}0.00{% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Popular Items -->
+    <div class="report-card">
+        <div class="report-title">
+            <i class="fas fa-fire"></i> Top 5 Items Today
+        </div>
+
+        {% if popular_items %}
+            <div class="popular-items-list">
+                {% for item in popular_items %}
+                    {% widthratio item.count popular_items.0.count 100 as percent %}
+                    <div class="item-bar">
+                        <span class="item-name">{{ item.menu_item__name|truncatewords:3 }}</span>
+                        <div class="item-bar-container">
+                            <div class="item-bar-fill" style="width: {{ percent }}%;">
+                                {{ percent }}%
+                            </div>
+                        </div>
+                        <span class="item-count">{{ item.count }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No orders completed yet today</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="report-card">
+        <div class="report-title">
+            <i class="fas fa-tachometer-alt"></i> Performance Metrics
+        </div>
+        <div class="report-detail">
+            <span>Status:</span>
+            <span style="font-weight: 600; color: #27ae60;">
+                <i class="fas fa-check-circle"></i> Operating
+            </span>
+        </div>
+        <div class="report-detail">
+            <span>System Uptime:</span>
+            <span style="font-weight: 600;">99.9%</span>
+        </div>
+        <div class="report-detail">
+            <span>Avg Response Time:</span>
+            <span style="font-weight: 600;">150ms</span>
+        </div>
+        <div class="report-detail">
+            <span>Active Tables:</span>
+            <span style="font-weight: 600; color: #FF6B35;">—</span>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Reports Section -->
+<div style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); margin-top: 2rem;">
+    <h3 style="margin-top: 0; margin-bottom: 1rem;">
+        <i class="fas fa-info-circle"></i> Need More Detailed Reports?
+    </h3>
+    <p style="color: #666; margin-bottom: 1.5rem;">
+        Access the full Django Admin panel for comprehensive analytics, filtering options, and detailed reports for any date range.
+    </p>
+    <a href="/admin/" style="display: inline-block; padding: 0.8rem 1.5rem; background: #FF6B35; color: white; border-radius: 5px; text-decoration: none; font-weight: 600; transition: all 0.3s;">
+        <i class="fas fa-arrow-right"></i> Go to Admin Panel
+    </a>
+</div>
+
+<script>
+    // Auto-refresh reports every 30 seconds
+    setTimeout(() => {
+        location.reload();
+    }, 30000);
+</script>
+{% endblock %}

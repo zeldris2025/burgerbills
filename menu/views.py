@@ -1,0 +1,738 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import FileResponse, JsonResponse, HttpResponse
+from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db.models import Q, Sum, Count, Prefetch
+from decimal import Decimal
+import json
+from datetime import datetime
+
+from .models import Category, MenuItem, Table, Order, OrderItem
+
+
+def index(request):
+    """Open the staff workspace as the system landing page."""
+    return redirect('staff_panel')
+
+
+@require_GET
+def table_qr_code(request, table_number):
+    table = get_object_or_404(Table, number=table_number)
+    table.save()
+    return FileResponse(table.qr_code.open('rb'), content_type='image/png')
+
+
+def table_menu(request, table_number):
+    """Customer menu view for a specific table - Modern responsive design"""
+    from datetime import timedelta
+    
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    
+    # Get all categories with their available items, ordered by order field
+    categories = Category.objects.prefetch_related(
+        Prefetch('items', MenuItem.objects.filter(is_available=True).order_by('order'))
+    ).order_by('order')
+    
+    # Get active order for this table (pending only - once confirmed, it goes to kitchen)
+    current_order = Order.objects.filter(
+        table=table,
+        status='pending'
+    ).latest('created_at') if Order.objects.filter(
+        table=table,
+        status='pending'
+    ).exists() else None
+
+    # Check if pending cart has expired (5 minutes)
+    if current_order and current_order.status == 'pending' and current_order.cart_expires_at:
+        if timezone.now() > current_order.cart_expires_at:
+            # Cart has expired, delete it for new customer
+            current_order.delete()
+            current_order = None
+    
+    # Refresh cart expiry time if order exists
+    if current_order and current_order.status == 'pending':
+        current_order.cart_expires_at = timezone.now() + timedelta(minutes=5)
+        current_order.save()
+
+    context = {
+        'table': table,
+        'categories': categories,
+        'current_order': current_order,
+    }
+    return render(request, 'menu/customer_menu_modern.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_to_order(request, table_number):
+    """Add item to order via AJAX"""
+    from datetime import timedelta
+    
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    
+    try:
+        data = json.loads(request.body)
+        menu_item_id = data.get('menu_item_id')
+        quantity = int(data.get('quantity', 1))
+        special_requests = data.get('special_requests', '').strip()
+
+        menu_item = get_object_or_404(MenuItem, id=menu_item_id, is_available=True)
+
+        # Get or create current order
+        order, created = Order.objects.get_or_create(
+            table=table,
+            status='pending',
+            defaults={'total_amount': 0}
+        )
+
+        # Check if pending cart has expired
+        if order.cart_expires_at and timezone.now() > order.cart_expires_at:
+            order.delete()
+            order, created = Order.objects.get_or_create(
+                table=table,
+                status='pending',
+                defaults={'total_amount': 0}
+            )
+
+        # Check if item already in order
+        order_item, item_created = OrderItem.objects.get_or_create(
+            order=order,
+            menu_item=menu_item,
+            special_requests=special_requests,
+            defaults={
+                'quantity': quantity,
+                'unit_price': menu_item.price
+            }
+        )
+
+        if not item_created:
+            order_item.quantity += quantity
+            order_item.save()
+
+        # Update order total and refresh cart expiry
+        order.total_amount = sum(
+            item.quantity * item.unit_price 
+            for item in order.items.all()
+        )
+        order.cart_expires_at = timezone.now() + timedelta(minutes=5)
+        order.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'{menu_item.name} added to order!',
+            'order_id': order.id,
+            'total_items': sum(item.quantity for item in order.items.all()),
+            'total_amount': str(order.total_amount),
+        })
+
+    except MenuItem.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@require_http_methods(["GET"])
+def current_order_items(request, table_number):
+    """Return the current pending order for the Orders panel."""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    order = Order.objects.filter(table=table, status='pending').first()
+
+    if not order:
+        return JsonResponse({
+            'items': [],
+            'total_items': 0,
+            'total_amount': '0.00',
+        })
+
+    items = [
+        {
+            'id': item.id,
+            'menu_item_id': item.menu_item_id,
+            'name': item.menu_item.name if item.menu_item else 'Deleted menu item',
+            'quantity': item.quantity,
+            'unit_price': str(item.unit_price),
+            'subtotal': str(item.get_subtotal()),
+        }
+        for item in order.items.select_related('menu_item')
+    ]
+
+    return JsonResponse({
+        'items': items,
+        'total_items': sum(item['quantity'] for item in items),
+        'total_amount': str(order.total_amount),
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_order_item(request, table_number, item_id):
+    """Update quantity of item in order"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    
+    try:
+        data = json.loads(request.body)
+        quantity = int(data.get('quantity', 0))
+
+        order = Order.objects.get(table=table, status='pending')
+        order_item = OrderItem.objects.get(id=item_id, order=order)
+
+        if quantity <= 0:
+            order_item.delete()
+        else:
+            order_item.quantity = quantity
+            order_item.save()
+
+        # Update order total
+        order.total_amount = sum(
+            item.quantity * item.unit_price 
+            for item in order.items.all()
+        )
+        order.save()
+
+        return JsonResponse({
+            'success': True,
+            'total_amount': str(order.total_amount),
+            'item_count': order.items.count(),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+def view_cart(request, table_number):
+    """View shopping cart"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    
+    try:
+        order = Order.objects.get(table=table, status='pending')
+    except Order.DoesNotExist:
+        order = None
+
+    context = {
+        'table': table,
+        'order': order,
+    }
+    return render(request, 'menu/cart.html', context)
+
+
+def checkout(request, table_number):
+    """Confirm the pending order and show a simple status handoff."""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+
+    order = Order.objects.filter(table=table, status='pending').first()
+    if order and order.items.exists():
+        order.status = 'confirmed'
+        order.save(update_fields=['status', 'updated_at'])
+    else:
+        order = Order.objects.filter(
+            table=table,
+            status__in=['confirmed', 'preparing', 'ready'],
+        ).order_by('-created_at').first()
+
+    if not order:
+        return redirect('table_menu', table_number=table_number)
+
+    context = {
+        'table': table,
+        'order': order,
+    }
+    return render(request, 'menu/checkout_modern.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def remove_from_cart(request, table_number, item_id):
+    """Cancel an item in the current pending order."""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    
+    try:
+        order = Order.objects.get(table=table, status='pending')
+        order_item = OrderItem.objects.get(id=item_id, order=order)
+        order_item.delete()
+
+        # Update order total
+        order.total_amount = sum(
+            item.quantity * item.unit_price 
+            for item in order.items.all()
+        )
+        order.save()
+
+        if order.items.count() == 0:
+            order.delete()
+            return JsonResponse({'success': True, 'order_deleted': True})
+
+        return JsonResponse({
+            'success': True,
+            'order_deleted': False,
+            'total_amount': str(order.total_amount),
+        })
+
+    except (Order.DoesNotExist, OrderItem.DoesNotExist):
+        return JsonResponse(
+            {'success': False, 'message': 'Order item not found'},
+            status=404,
+        )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def submit_order(request, table_number):
+    """Submit order to kitchen"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    
+    try:
+        order = Order.objects.get(table=table, status='pending')
+        
+        if order.items.count() == 0:
+            return JsonResponse({'success': False, 'message': 'Cart is empty'})
+
+        data = json.loads(request.body)
+        order.special_instructions = data.get('special_instructions', '')
+        order.status = 'confirmed'
+        order.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Order submitted!',
+            'order_id': order.id,
+            'order_number': order.order_number,
+            'redirect_url': f'/table/{table_number}/order/{order.id}/'
+        })
+
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'No pending order'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+def order_status(request, table_number, order_id):
+    """Check order status"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    order = get_object_or_404(Order, id=order_id, table=table)
+
+    context = {
+        'table': table,
+        'order': order,
+    }
+    return render(request, 'menu/order_status.html', context)
+
+
+@require_GET
+def order_status_data(request, table_number, order_id):
+    """Return the current order state for customer-side polling."""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    order = get_object_or_404(Order, id=order_id, table=table)
+    return JsonResponse({
+        'status': order.status,
+        'is_called': order.is_called,
+    })
+
+
+def order_confirmation(request, table_number, order_id):
+    """Order confirmation page - Modern responsive design"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    order = get_object_or_404(Order, id=order_id, table=table)
+
+    context = {
+        'table': table,
+        'order': order,
+    }
+    return render(request, 'menu/order_confirmation_modern.html', context)
+
+
+def receipt(request, table_number, order_id):
+    """Display receipt"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    order = get_object_or_404(Order, id=order_id, table=table)
+
+    context = {
+        'table': table,
+        'order': order,
+    }
+    return render(request, 'menu/receipt.html', context)
+
+
+# ==================== ADMIN/CASHIER VIEWS ====================
+
+@login_required
+def dashboard(request):
+    """Cashier/Admin dashboard"""
+    if not request.user.is_staff:
+        return redirect('index')
+
+    # Get statistics
+    pending_orders = Order.objects.filter(status__in=['pending', 'confirmed']).count()
+    preparing_orders = Order.objects.filter(status='preparing').count()
+    today_completed = Order.objects.filter(
+        status='completed',
+        completed_at__date=timezone.now().date()
+    ).count()
+    today_revenue = Order.objects.filter(
+        status='completed',
+        completed_at__date=timezone.now().date()
+    ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+
+    active_orders = Order.objects.filter(
+        status__in=['pending', 'confirmed', 'preparing']
+    ).order_by('-created_at')[:10]
+
+    context = {
+        'pending_orders': pending_orders,
+        'preparing_orders': preparing_orders,
+        'today_completed': today_completed,
+        'today_revenue': today_revenue,
+        'active_orders': active_orders,
+    }
+    return render(request, 'menu/dashboard.html', context)
+
+
+@login_required
+def all_orders(request):
+    """View all orders"""
+    if not request.user.is_staff:
+        return redirect('index')
+
+    status_filter = request.GET.get('status', '')
+    
+    if status_filter:
+        orders = Order.objects.filter(status=status_filter).order_by('-created_at')
+    else:
+        orders = Order.objects.all().order_by('-created_at')
+
+    context = {
+        'orders': orders,
+        'status_choices': Order.ORDER_STATUS_CHOICES,
+        'selected_status': status_filter,
+    }
+    return render(request, 'menu/all_orders.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_order_status(request, order_id):
+    """Update order status"""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+    try:
+        order = Order.objects.get(id=order_id)
+        data = json.loads(request.body)
+        new_status = data.get('status')
+
+        if new_status in dict(Order.ORDER_STATUS_CHOICES):
+            order.status = new_status
+            if new_status == 'completed':
+                order.completed_at = timezone.now()
+            order.save()
+            return JsonResponse({'success': True, 'message': 'Order updated'})
+        
+        return JsonResponse({'success': False, 'message': 'Invalid status'})
+
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def call_customer(request, order_id):
+    """Call customer to pick up ready order"""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+    try:
+        order = Order.objects.get(id=order_id, status='ready')
+        
+        # Mark as called
+        order.is_called = True
+        order.called_at = timezone.now()
+        order.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Customer at Table {order.table.number} called!',
+            'called_at': order.called_at.strftime('%I:%M %p')
+        })
+
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found or not ready'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@login_required
+def menu_management(request):
+    """Manage menu items"""
+    if not request.user.is_staff:
+        return redirect('index')
+
+    categories = Category.objects.prefetch_related('items')
+    
+    context = {
+        'categories': categories,
+    }
+    return render(request, 'menu/menu_management.html', context)
+
+
+@login_required
+def reports(request):
+    """Sales and performance reports"""
+    if not request.user.is_staff:
+        return redirect('index')
+
+    today = timezone.now().date()
+    
+    daily_revenue = Order.objects.filter(
+        status='completed',
+        completed_at__date=today
+    ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+
+    daily_orders = Order.objects.filter(
+        status='completed',
+        completed_at__date=today
+    ).count()
+
+    popular_items = OrderItem.objects.filter(
+        order__status='completed',
+        order__completed_at__date=today
+    ).values('menu_item__name').annotate(
+        count=Count('id')
+    ).order_by('-count')[:10]
+
+    context = {
+        'daily_revenue': daily_revenue,
+        'daily_orders': daily_orders,
+        'popular_items': popular_items,
+    }
+    return render(request, 'menu/reports.html', context)
+
+
+# ============= STAFF LOGIN & MANAGEMENT =============
+
+def staff_login(request):
+    """Staff member login page"""
+    from django.contrib.auth import authenticate, login
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None and user.is_staff:
+            login(request, user)
+            return redirect('staff_panel')
+        else:
+            context = {'error': 'Invalid credentials or not a staff member'}
+            return render(request, 'menu/staff_login.html', context)
+    
+    return render(request, 'menu/staff_login.html')
+
+
+def staff_logout(request):
+    """Staff member logout"""
+    from django.contrib.auth import logout
+    logout(request)
+    return redirect('staff_login')
+
+
+@login_required(login_url='staff_login')
+def staff_panel(request):
+    """Main staff panel for managing orders"""
+    if not request.user.is_staff:
+        return redirect('staff_login')
+    
+    # Get all active orders (confirmed = pending for kitchen staff)
+    pending_orders = Order.objects.filter(status='confirmed').order_by('-created_at')
+    preparing_orders = Order.objects.filter(status='preparing').order_by('-created_at')
+    ready_orders = Order.objects.filter(status='ready').order_by('-created_at')
+    completed_orders = Order.objects.filter(status='completed').order_by('-created_at')[:10]
+    
+    # Calculate stats
+    today = timezone.now().date()
+    daily_revenue = Order.objects.filter(
+        status='completed',
+        completed_at__date=today
+    ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    daily_orders_count = Order.objects.filter(
+        status='completed',
+        completed_at__date=today
+    ).count()
+    
+    context = {
+        'pending_orders': pending_orders,
+        'preparing_orders': preparing_orders,
+        'ready_orders': ready_orders,
+        'completed_orders': completed_orders,
+        'daily_revenue': daily_revenue,
+        'daily_orders_count': daily_orders_count,
+        'total_pending': pending_orders.count(),
+        'total_preparing': preparing_orders.count(),
+        'total_ready': ready_orders.count(),
+    }
+    return render(request, 'menu/staff_panel.html', context)
+
+
+@login_required(login_url='staff_login')
+@require_http_methods(["POST"])
+def staff_update_status(request, order_id):
+    """Staff update order status"""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+    
+    try:
+        order = Order.objects.get(id=order_id)
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        
+        if new_status in dict(Order.ORDER_STATUS_CHOICES):
+            order.status = new_status
+            if new_status == 'completed':
+                order.completed_at = timezone.now()
+            order.save()
+            return JsonResponse({'success': True, 'message': 'Order status updated'})
+        
+        return JsonResponse({'success': False, 'message': 'Invalid status'})
+    
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@login_required(login_url='staff_login')
+@require_http_methods(["POST"])
+def staff_call_customer(request, order_id):
+    """Staff call customer for ready order"""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+    
+    try:
+        order = Order.objects.get(id=order_id, status='ready')
+        order.is_called = True
+        order.called_at = timezone.now()
+        order.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'✅ Table {order.table.number} called!',
+            'called_at': order.called_at.strftime('%I:%M %p')
+        })
+    
+    except Order.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Order not found or not ready'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+# ============= MANAGER STAFF MANAGEMENT =============
+
+def manager_login(request):
+    """Manager login page"""
+    from django.contrib.auth import authenticate, login
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None and user.is_superuser:
+            login(request, user)
+            return redirect('manager_panel')
+        else:
+            context = {'error': 'Invalid manager credentials'}
+            return render(request, 'menu/manager_login.html', context)
+    
+    return render(request, 'menu/manager_login.html')
+
+
+@login_required(login_url='manager_login')
+def manager_panel(request):
+    """Manager panel for staff management"""
+    if not request.user.is_superuser:
+        return redirect('manager_login')
+    
+    from django.contrib.auth.models import User
+    
+    staff_users = User.objects.filter(is_staff=True, is_superuser=False)
+    
+    context = {
+        'staff_users': staff_users,
+        'total_staff': staff_users.count(),
+    }
+    return render(request, 'menu/manager_panel.html', context)
+
+
+@login_required(login_url='manager_login')
+@require_http_methods(["POST"])
+def create_staff_user(request):
+    """Create a new staff user"""
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+    
+    from django.contrib.auth.models import User
+    
+    try:
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        
+        # Validate input
+        if not username or not password:
+            return JsonResponse({'success': False, 'message': 'Username and password required'})
+        
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({'success': False, 'message': 'Username already exists'})
+        
+        # Create staff user
+        staff_user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            is_staff=True
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Staff user "{username}" created successfully!',
+            'staff_user': {
+                'id': staff_user.id,
+                'username': staff_user.username,
+                'name': f"{staff_user.first_name} {staff_user.last_name}",
+            }
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required(login_url='manager_login')
+@require_http_methods(["POST"])
+def delete_staff_user(request, user_id):
+    """Delete a staff user"""
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+    
+    from django.contrib.auth.models import User
+    
+    try:
+        user = User.objects.get(id=user_id, is_staff=True, is_superuser=False)
+        username = user.username
+        user.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Staff user "{username}" deleted successfully!'
+        })
+    
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Staff user not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})

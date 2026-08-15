@@ -1,0 +1,437 @@
+{% extends 'menu/customer_base.html' %}
+
+{% block title %}Your Cart - Table {{ table.number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cart-container {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .cart-items {
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .cart-item {
+        display: flex;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e0e0e0;
+        gap: 1.5rem;
+    }
+
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+
+    .cart-item-image {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #FF6B35 0%, #004E89 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .cart-item-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .cart-item-details {
+        flex-grow: 1;
+    }
+
+    .cart-item-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.3rem;
+    }
+
+    .cart-item-price {
+        color: #FF6B35;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .cart-item-notes {
+        font-size: 0.85rem;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 0.5rem;
+    }
+
+    .cart-item-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .quantity-control button {
+        background: #f5f5f5;
+        border: none;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .quantity-control button:hover {
+        background: #FF6B35;
+        color: white;
+    }
+
+    .quantity-control input {
+        width: 50px;
+        border: none;
+        text-align: center;
+        font-weight: 600;
+        padding: 0 0.5rem;
+    }
+
+    .remove-btn {
+        background: none;
+        border: none;
+        color: #e74c3c;
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 0;
+        transition: all 0.2s;
+    }
+
+    .remove-btn:hover {
+        color: #c0392b;
+        transform: scale(1.2);
+    }
+
+    .summary-panel {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .summary-row.total {
+        border-top: 2px solid #FF6B35;
+        padding-top: 1rem;
+        margin-top: 1rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #FF6B35;
+    }
+
+    .special-instructions {
+        margin-top: 1.5rem;
+    }
+
+    .special-instructions textarea {
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 0.8rem;
+        font-size: 0.9rem;
+        resize: vertical;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-action {
+        padding: 1rem;
+        border: none;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+    }
+
+    .btn-back {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .btn-back:hover {
+        background: #e0e0e0;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .empty-cart i {
+        font-size: 3rem;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+
+    .empty-cart p {
+        color: #999;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #FF6B35, #F7931E);
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .cart-container {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-panel {
+            position: static;
+            top: auto;
+        }
+
+        .cart-item {
+            flex-direction: column;
+        }
+
+        .cart-item-image {
+            width: 100%;
+            height: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-section">
+    <h1><i class="fas fa-shopping-cart"></i> Your Cart</h1>
+    <span class="table-badge">
+        <i class="fas fa-table"></i> Table {{ table.number }}
+    </span>
+</div>
+
+{% if order and order.items.all %}
+    <div class="cart-container">
+        <div class="cart-items">
+            {% for item in order.items.all %}
+                <div class="cart-item">
+                    <div class="cart-item-image">
+                        {% if item.menu_item.image %}
+                            <img src="{{ item.menu_item.image.url }}" alt="{{ item.menu_item.name }}">
+                        {% else %}
+                            🍔
+                        {% endif %}
+                    </div>
+
+                    <div class="cart-item-details">
+                        <div class="cart-item-name">{{ item.menu_item.name }}</div>
+                        <div class="cart-item-price">${{ item.unit_price }}</div>
+                        {% if item.special_requests %}
+                            <div class="cart-item-notes">
+                                📝 {{ item.special_requests }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="cart-item-controls">
+                        <div class="quantity-control">
+                            <button onclick="updateQuantity({{ item.id }}, {{ item.quantity }} - 1)">−</button>
+                            <input type="number" value="{{ item.quantity }}" readonly>
+                            <button onclick="updateQuantity({{ item.id }}, {{ item.quantity }} + 1)">+</button>
+                        </div>
+
+                        <div style="text-align: right; min-width: 60px;">
+                            <div style="font-weight: 600; font-size: 1.1rem; color: #FF6B35;">
+                                ${{ item.get_subtotal }}
+                            </div>
+                        </div>
+
+                        <button class="remove-btn" onclick="removeItem({{ item.id }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="summary-panel">
+            <h3 style="margin-top: 0; color: #1a1a1a;">Order Summary</h3>
+
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>${{ order.total_amount }}</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Tax (0%):</span>
+                <span>$0.00</span>
+            </div>
+
+            <div class="summary-row total">
+                <span>Total:</span>
+                <span>${{ order.total_amount }}</span>
+            </div>
+
+            <div class="special-instructions">
+                <label for="specialInstructions" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">
+                    Special Instructions:
+                </label>
+                <textarea id="specialInstructions" placeholder="Any special requests for the kitchen?"></textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-action btn-submit" onclick="submitOrder()">
+                    <i class="fas fa-check"></i> Submit Order
+                </button>
+                <a href="{% url 'table_menu' table_number=table.number %}" class="btn-action btn-back" style="text-align: center; text-decoration: none;">
+                    <i class="fas fa-arrow-left"></i> Add More Items
+                </a>
+            </div>
+
+            <p style="font-size: 0.85rem; color: #999; text-align: center; margin-top: 1rem;">
+                Your order will be sent to the kitchen immediately after submission.
+            </p>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-cart">
+        <i class="fas fa-shopping-cart"></i>
+        <p>Your cart is empty</p>
+        <a href="{% url 'table_menu' table_number=table.number %}" class="btn-action btn-submit" style="display: inline-block; text-decoration: none;">
+            <i class="fas fa-arrow-left"></i> Continue Shopping
+        </a>
+    </div>
+{% endif %}
+
+<script>
+    const tableNumber = {{ table.number }};
+    const orderId = {% if order %}{{ order.id }}{% else %}null{% endif %};
+
+    function updateQuantity(itemId, newQuantity) {
+        if (newQuantity <= 0) {
+            removeItem(itemId);
+            return;
+        }
+
+        const data = { quantity: newQuantity };
+        
+        fetch(`/table/${tableNumber}/update-item/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function removeItem(itemId) {
+        if (confirm('Remove this item from cart?')) {
+            window.location.href = `/table/${tableNumber}/remove-item/${itemId}/`;
+        }
+    }
+
+    function submitOrder() {
+        const specialInstructions = document.getElementById('specialInstructions').value;
+        
+        const data = {
+            special_instructions: specialInstructions
+        };
+
+        fetch(`/table/${tableNumber}/submit-order/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success toast
+                showToast('Order submitted! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1000);
+            } else {
+                showToast(data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showToast('Error submitting order', 'danger');
+        });
+    }
+
+    function showToast(message, type) {
+        const toastHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', toastHtml);
+    }
+</script>
+{% endblock %}

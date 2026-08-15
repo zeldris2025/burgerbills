@@ -1,0 +1,796 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}Staff Panel - Burger Bills{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-header {
+        background: linear-gradient(135deg, #004E89 0%, #FF6B35 100%);
+        color: white;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+    }
+
+    .staff-header h1 {
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .logout-btn {
+        background: white;
+        color: #FF6B35;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .logout-btn:hover {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .stats-card .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #FF6B35;
+        margin: 0.5rem 0;
+    }
+
+    .stats-card .label {
+        color: #666;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stats-card.pending {
+        border-left: 4px solid #f39c12;
+    }
+
+    .stats-card.preparing {
+        border-left: 4px solid #3498db;
+    }
+
+    .stats-card.ready {
+        border-left: 4px solid #e74c3c;
+    }
+
+    .stats-card.completed {
+        border-left: 4px solid #27ae60;
+    }
+
+    .order-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #FF6B35;
+        display: inline-block;
+    }
+
+    .order-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border-left: 4px solid #FF6B35;
+    }
+
+    .order-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .order-number {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #004E89;
+    }
+
+    .table-badge {
+        background: #FF6B35;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .order-total {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #27ae60;
+    }
+
+    .order-items {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .order-item {
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    .order-item-qty {
+        font-weight: 600;
+        color: #FF6B35;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .btn-small {
+        padding: 0.6rem 1.2rem;
+        border-radius: 6px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+
+    .btn-small:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-confirming {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-preparing {
+        background: #f39c12;
+        color: white;
+    }
+
+    .btn-ready {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .btn-call {
+        background: #27ae60;
+        color: white;
+    }
+
+    .btn-called {
+        background: #95a5a6;
+        color: white;
+        cursor: default;
+    }
+
+    .btn-complete {
+        background: #27ae60;
+        color: white;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fee;
+        color: #c33;
+    }
+
+    .status-confirmed {
+        background: #f0f8ff;
+        color: #0066cc;
+    }
+
+    .status-preparing {
+        background: #fffacd;
+        color: #cc9900;
+    }
+
+    .status-ready {
+        background: #ffe0e0;
+        color: #cc0000;
+    }
+
+    .status-completed {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #ddd;
+        margin-bottom: 1rem;
+    }
+
+    .called-at {
+        font-size: 0.9rem;
+        color: #27ae60;
+        margin-top: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .stats-card .number {
+            font-size: 2rem;
+        }
+
+        .order-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .order-actions {
+            flex-direction: column;
+        }
+
+        .btn-small {
+            width: 100%;
+        }
+    }
+
+    /* Simple kitchen view */
+    .staff-header {
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #fff;
+        color: #1f2937;
+    }
+
+    .staff-header h1 {
+        margin: 0;
+        font-size: 1.35rem;
+    }
+
+    .staff-header p,
+    .staff-header h1 i,
+    .section-title i,
+    .order-number i,
+    .table-badge i {
+        display: none;
+    }
+
+    .logout-btn {
+        padding: 0.5rem 0.8rem;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        color: #374151;
+    }
+
+    .logout-btn:hover {
+        background: #f3f4f6;
+        transform: none;
+    }
+
+    .staff-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #e5e7eb;
+    }
+
+    .staff-summary > div {
+        min-width: 0;
+    }
+
+    .stats-card {
+        min-height: 78px;
+        display: flex;
+        flex-direction: column-reverse;
+        justify-content: center;
+        margin: 0;
+        padding: 0.75rem;
+        border: 0 !important;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .stats-card .number {
+        margin: 0;
+        color: #111827;
+        font-size: 1.45rem;
+    }
+
+    .stats-card .label {
+        color: #6b7280;
+        font-size: 0.7rem;
+        letter-spacing: 0;
+        text-transform: none;
+    }
+
+    .orders-board {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .order-section {
+        min-width: 0;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        display: block;
+        margin-bottom: 0.75rem;
+        padding: 0;
+        border: 0;
+        color: #374151;
+        font-size: 1rem;
+    }
+
+    .order-card {
+        margin-bottom: 0.75rem;
+        padding: 1rem;
+        border: 1px solid #e5e7eb;
+        border-left: 3px solid #9ca3af;
+        border-radius: 6px;
+        box-shadow: none;
+    }
+
+    .order-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .order-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.4rem 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .order-number {
+        overflow: hidden;
+        color: #111827;
+        font-size: 0.95rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .table-badge,
+    .status-badge {
+        padding: 0;
+        border-radius: 0;
+        background: transparent !important;
+        color: #6b7280 !important;
+        font-size: 0.75rem;
+    }
+
+    .table-badge {
+        color: #e04414 !important;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .order-total {
+        color: #111827;
+        font-size: 1rem;
+        text-align: right;
+    }
+
+    .order-items {
+        margin: 0 0 0.75rem;
+        padding: 0.75rem;
+        border-radius: 4px;
+        background: #f9fafb;
+    }
+
+    .order-item {
+        padding: 0.25rem 0;
+    }
+
+    .order-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    .btn-small {
+        min-height: 42px;
+        flex: 1;
+        padding: 0.55rem 0.75rem;
+        border-radius: 4px;
+        transition: none;
+    }
+
+    .btn-small:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-small.current-status {
+        opacity: 0.55;
+        cursor: default;
+    }
+
+    .customer-call-action {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .completed-orders {
+        margin-top: 0.5rem;
+    }
+
+    .completed-orders summary {
+        padding: 0.75rem 0;
+        color: #6b7280;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+        .orders-board {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .staff-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .staff-header h1 {
+            font-size: 1.15rem;
+        }
+
+        .order-header {
+            align-items: center;
+        }
+
+        .order-actions {
+            gap: 0.35rem;
+        }
+
+        .btn-small {
+            padding-inline: 0.35rem;
+            font-size: 0.78rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="staff-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1><i class="fas fa-store"></i> Staff Panel</h1>
+            <p class="mb-0">Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong></p>
+        </div>
+        <a href="{% url 'staff_logout' %}" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="staff-summary">
+    <div>
+        <div class="stats-card pending">
+            <div class="label">Pending Orders</div>
+            <div class="number">{{ total_pending }}</div>
+        </div>
+    </div>
+    <div>
+        <div class="stats-card preparing">
+            <div class="label">Preparing</div>
+            <div class="number">{{ total_preparing }}</div>
+        </div>
+    </div>
+    <div>
+        <div class="stats-card ready">
+            <div class="label">Ready for Pickup</div>
+            <div class="number">{{ total_ready }}</div>
+        </div>
+    </div>
+    <div>
+        <div class="stats-card completed">
+            <div class="label">Today's Revenue</div>
+            <div class="number">${{ daily_revenue|floatformat:2 }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="orders-board">
+<!-- Confirmed Orders (From Kitchen) -->
+{% if pending_orders %}
+<div class=\"order-section\">
+    <h2 class=\"section-title\"><i class=\"fas fa-inbox\"></i> New Orders</h2>
+    {% for order in pending_orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <span class="order-number">
+                    <i class="fas fa-receipt"></i> {{ order.order_number }}
+                </span>
+                <span class="table-badge">
+                    <i class="fas fa-table"></i> Table {{ order.table.number }}
+                </span>
+                <span class=\"status-badge status-confirmed\">Confirmed</span>
+                <span class="order-total">${{ order.total_amount }}</span>
+            </div>
+
+            <div class="order-items">
+                {% for item in order.items.all %}
+                    <div class="order-item">
+                        <span class="order-item-qty">{{ item.quantity }}x</span> {{ item.menu_item.name }}
+                        {% if item.special_requests %}
+                            <div style="font-size: 0.85rem; color: #666; margin-left: 2rem;">
+                                <strong>Special:</strong> {{ item.special_requests }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="order-actions">
+                <button class="btn-small btn-preparing" onclick="updateOrderStatus({{ order.id }}, 'preparing')">
+                    Preparing
+                </button>
+                <button class="btn-small btn-complete" onclick="updateOrderStatus({{ order.id }}, 'completed')">
+                    Completed
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Preparing Orders -->
+{% if preparing_orders %}
+<div class="order-section">
+    <h2 class="section-title"><i class="fas fa-utensils"></i> Orders Being Prepared</h2>
+    {% for order in preparing_orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <span class="order-number">
+                    <i class="fas fa-receipt"></i> {{ order.order_number }}
+                </span>
+                <span class="table-badge">
+                    <i class="fas fa-table"></i> Table {{ order.table.number }}
+                </span>
+                <span class="status-badge status-preparing">Preparing</span>
+                <span class="order-total">${{ order.total_amount }}</span>
+            </div>
+
+            <div class="order-items">
+                {% for item in order.items.all %}
+                    <div class="order-item">
+                        <span class="order-item-qty">{{ item.quantity }}x</span> {{ item.menu_item.name }}
+                        {% if item.special_requests %}
+                            <div style="font-size: 0.85rem; color: #666; margin-left: 2rem;">
+                                <strong>Special:</strong> {{ item.special_requests }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="order-actions">
+                <button class="btn-small btn-preparing current-status" disabled>
+                    Preparing
+                </button>
+                <button class="btn-small btn-complete" onclick="updateOrderStatus({{ order.id }}, 'completed')">
+                    Completed
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Ready Orders -->
+{% if ready_orders %}
+<div class="order-section">
+    <h2 class="section-title"><i class="fas fa-bell"></i> Ready for Pickup</h2>
+    {% for order in ready_orders %}
+        <div class="order-card" style="border-left-color: #e74c3c;">
+            <div class="order-header">
+                <span class="order-number">
+                    <i class="fas fa-receipt"></i> {{ order.order_number }}
+                </span>
+                <span class="table-badge" style="background: #e74c3c;">
+                    <i class="fas fa-table"></i> Table {{ order.table.number }}
+                </span>
+                <span class="status-badge status-ready">Ready</span>
+                <span class="order-total">${{ order.total_amount }}</span>
+            </div>
+
+            <div class="order-items">
+                {% for item in order.items.all %}
+                    <div class="order-item">
+                        <span class="order-item-qty">{{ item.quantity }}x</span> {{ item.menu_item.name }}
+                        {% if item.special_requests %}
+                            <div style="font-size: 0.85rem; color: #666; margin-left: 2rem;">
+                                <strong>Special:</strong> {{ item.special_requests }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if order.is_called %}
+                <div class="called-at">
+                    <i class="fas fa-check-circle" style="color: #27ae60;"></i> 
+                    Customer called at {{ order.called_at|time:"g:i A" }}
+                </div>
+            {% endif %}
+
+            <div class="order-actions">
+                <button class="btn-small btn-preparing" onclick="updateOrderStatus({{ order.id }}, 'preparing')">
+                    Preparing
+                </button>
+                <button class="btn-small btn-complete" onclick="updateOrderStatus({{ order.id }}, 'completed')">
+                    Completed
+                </button>
+            </div>
+            <div>
+                {% if not order.is_called %}
+                    <button class="btn-small btn-call customer-call-action" onclick="callCustomer({{ order.id }})">
+                        <i class="fas fa-bell"></i> Call Customer
+                    </button>
+                {% else %}
+                    <button class="btn-small btn-called customer-call-action" disabled>
+                        <i class="fas fa-check-circle"></i> Already Called
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
+</div>
+
+<!-- Completed Orders / Order Logs -->
+{% if completed_orders %}
+<details class="completed-orders">
+    <summary>Recent completed orders</summary>
+    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; max-height: 400px; overflow-y: auto;">
+        {% for order in completed_orders %}
+            <div style="padding: 1rem 0; border-bottom: 1px solid #ddd; font-size: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <strong>{{ order.order_number }}</strong>
+                    <span style="color: #27ae60; font-weight: 600;">✓ Completed</span>
+                </div>
+                <div style="color: #666; font-size: 0.85rem;">
+                    Table {{ order.table.number }} • ${{ order.total_amount }} • {% if order.completed_at %}{{ order.completed_at|time:"g:i A" }}{% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</details>
+{% endif %}
+
+<!-- No Orders Message -->
+{% if not pending_orders and not preparing_orders and not ready_orders %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>All caught up!</h3>
+        <p>No active orders at the moment.</p>
+    </div>
+{% endif %}
+
+<script>
+    // Get CSRF token from hidden input
+    function getCSRFToken() {
+        const token = document.querySelector('[name=csrfmiddlewaretoken]');
+        return token ? token.value : '';
+    }
+
+    function updateOrderStatus(orderId, newStatus) {
+        fetch(`/staff/order/${orderId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => showNotification('Error updating order', 'error'));
+    }
+
+    function callCustomer(orderId) {
+        if (!confirm('Call customer to pickup order?')) {
+            return;
+        }
+
+        fetch(`/staff/order/${orderId}/call-customer/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => showNotification('Error calling customer', 'error'));
+    }
+
+    function showNotification(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert" 
+                 style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', alertHtml);
+        
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                alerts[alerts.length - 1].remove();
+            }
+        }, 3000);
+    }
+
+    // Auto-refresh every 10 seconds
+    setTimeout(() => location.reload(), 10000);
+</script>
+{% endblock %}

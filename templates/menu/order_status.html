@@ -1,0 +1,597 @@
+{% extends 'menu/customer_base.html' %}
+
+{% block title %}Order Status - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .order-header {
+        background: linear-gradient(135deg, #FF6B35 0%, #004E89 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .order-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        letter-spacing: 1px;
+    }
+
+    .order-time {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    .status-tracker {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .status-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .status-steps::before {
+        content: '';
+        position: absolute;
+        top: 30px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: #e0e0e0;
+        z-index: 0;
+    }
+
+    .status-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .status-dot {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #e0e0e0;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .status-step.active .status-dot {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        border-color: #FF6B35;
+        color: white;
+    }
+
+    .status-step.completed .status-dot {
+        background: #27ae60;
+        border-color: #27ae60;
+        color: white;
+    }
+
+    .status-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .status-step.active .status-label {
+        color: #FF6B35;
+    }
+
+    .status-step.completed .status-label {
+        color: #27ae60;
+    }
+
+    .order-details {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .detail-value {
+        color: #666;
+        text-align: right;
+    }
+
+    .order-items {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .order-item-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .order-item-row:last-child {
+        border-bottom: none;
+    }
+
+    .item-info {
+        flex: 1;
+    }
+
+    .item-name {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.3rem;
+    }
+
+    .item-notes {
+        font-size: 0.85rem;
+        color: #999;
+        font-style: italic;
+    }
+
+    .item-price {
+        text-align: right;
+        font-weight: 600;
+        color: #FF6B35;
+    }
+
+    .item-qty {
+        text-align: right;
+        color: #666;
+        min-width: 60px;
+    }
+
+    .message-box {
+        background: #f0f8ff;
+        border-left: 4px solid #FF6B35;
+        padding: 1.5rem;
+        border-radius: 5px;
+        margin-bottom: 2rem;
+    }
+
+    .message-box.success {
+        background: #f0fdf4;
+        border-left-color: #27ae60;
+    }
+
+    .message-box.warning {
+        background: #fffbf0;
+        border-left-color: #f39c12;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-action {
+        padding: 0.8rem 2rem;
+        border: none;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-receipt {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+    }
+
+    .btn-receipt:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+    }
+
+    .btn-menu {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .btn-menu:hover {
+        background: #e0e0e0;
+    }
+
+    .status-info {
+        padding: 1rem;
+        background: #fff9f0;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+        text-align: center;
+        color: #666;
+    }
+
+    .auto-refresh {
+        font-size: 0.85rem;
+        color: #999;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .completion-alert-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        background: rgba(18, 18, 18, 0.72);
+        backdrop-filter: blur(4px);
+    }
+
+    .completion-alert-overlay[hidden] {
+        display: none;
+    }
+
+    .completion-alert {
+        width: min(100%, 440px);
+        max-height: calc(100dvh - 2rem);
+        overflow-y: auto;
+        padding: 2rem;
+        border-top: 5px solid #27ae60;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+        text-align: center;
+    }
+
+    .completion-alert-icon {
+        width: 72px;
+        height: 72px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background: #27ae60;
+        color: white;
+        font-size: 2rem;
+    }
+
+    .completion-alert h2 {
+        margin-bottom: 0.75rem;
+        color: #1a1a1a;
+    }
+
+    .completion-alert p {
+        margin-bottom: 1.5rem;
+        color: #666;
+    }
+
+    .completion-alert-dismiss {
+        width: 100%;
+        min-height: 48px;
+        border: 0;
+        border-radius: 6px;
+        background: #27ae60;
+        color: white;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+        .completion-alert {
+            padding: 1.5rem;
+        }
+
+        .completion-alert-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.6rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="status-container">
+    <div class="order-header">
+        <div class="order-number">{{ order.order_number }}</div>
+        <div class="order-time">Table {{ table.number }} • {{ order.created_at|date:"M d, Y H:i" }}</div>
+    </div>
+
+    {% if order.status == 'cancelled' %}
+        <div class="message-box" id="order-status-message">
+            <i class="fas fa-exclamation-circle"></i> Your order has been cancelled.
+        </div>
+    {% elif order.status == 'completed' %}
+        <div class="message-box success" id="order-status-message">
+            <i class="fas fa-check-circle"></i> Your order is ready! Please collect it at the counter.
+        </div>
+    {% else %}
+        <div class="message-box" id="order-status-message">
+            <i class="fas fa-info-circle"></i> Your order is being prepared. Please wait...
+        </div>
+        <div class="auto-refresh">
+            <i class="fas fa-sync"></i> This page auto-refreshes every 5 seconds
+        </div>
+    {% endif %}
+
+    {% if order.status == 'ready' and order.is_called %}
+        <div class="message-box" style="background: #fef3c7; border-left-color: #f39c12;">
+            <i class="fas fa-bell" style="color: #f39c12; font-size: 1.3rem; margin-right: 0.5rem;"></i>
+            <strong style="color: #f39c12;">🎉 YOUR ORDER IS READY FOR PICKUP!</strong>
+            <div style="margin-top: 0.5rem; color: #d97706;">Called at {{ order.called_at|time:"g:i A" }}</div>
+        </div>
+    {% endif %}
+
+    <!-- Status Tracker -->
+    <div class="status-tracker">
+        <div class="status-steps">
+            <div class="status-step {% if order.status in 'pending confirmed' %}active{% else %}completed{% endif %}" data-order-status="confirmed">
+                <div class="status-dot">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="status-label">Confirmed</div>
+            </div>
+
+            <div class="status-step {% if order.status == 'preparing' %}active{% elif order.status in 'ready completed' %}completed{% endif %}" data-order-status="preparing">
+                <div class="status-dot">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="status-label">Preparing</div>
+            </div>
+
+            <div class="status-step {% if order.status == 'ready' %}active{% elif order.status == 'completed' %}completed{% endif %}" data-order-status="ready">
+                <div class="status-dot">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="status-label">Ready</div>
+            </div>
+
+            <div class="status-step {% if order.status == 'completed' %}completed{% endif %}" data-order-status="completed">
+                <div class="status-dot">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="status-label">Complete</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="order-items">
+        <h3 style="margin-top: 0; margin-bottom: 1rem;">Order Items</h3>
+        {% for item in order.items.all %}
+            <div class="order-item-row">
+                <div class="item-info">
+                    <div class="item-name">{{ item.menu_item.name }}</div>
+                    {% if item.special_requests %}
+                        <div class="item-notes">{{ item.special_requests }}</div>
+                    {% endif %}
+                </div>
+                <div class="item-qty">x {{ item.quantity }}</div>
+                <div class="item-price">${{ item.get_subtotal }}</div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Order Details -->
+    <div class="order-details">
+        <h3 style="margin-top: 0;">Order Details</h3>
+        <div class="detail-row">
+            <span class="detail-label">Subtotal:</span>
+            <span class="detail-value">${{ order.total_amount }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Tax:</span>
+            <span class="detail-value">$0.00</span>
+        </div>
+        <div class="detail-row" style="border-bottom: 2px solid #FF6B35; padding-top: 1rem; padding-bottom: 1rem;">
+            <span class="detail-label" style="font-size: 1.1rem; color: #FF6B35;">Total:</span>
+            <span class="detail-value" style="font-size: 1.1rem; color: #FF6B35; font-weight: 700;">${{ order.total_amount }}</span>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-buttons">
+        <a href="{% url 'receipt' table_number=table.number order_id=order.id %}" class="btn-action btn-receipt">
+            <i class="fas fa-receipt"></i> View Receipt
+        </a>
+        <a href="{% url 'table_menu' table_number=table.number %}" class="btn-action btn-menu">
+            <i class="fas fa-arrow-left"></i> Back to Menu
+        </a>
+    </div>
+</div>
+
+<div class="completion-alert-overlay" id="completion-alert" hidden>
+    <section class="completion-alert" role="alertdialog" aria-modal="true" aria-labelledby="completion-alert-title" aria-describedby="completion-alert-message">
+        <div class="completion-alert-icon" aria-hidden="true">
+            <i class="fas fa-check"></i>
+        </div>
+        <h2 id="completion-alert-title">Your order is ready!</h2>
+        <p id="completion-alert-message">
+            Your order {{ order.order_number }} is ready. Collect your order now at the counter.
+        </p>
+        <button type="button" class="completion-alert-dismiss" id="completion-alert-dismiss">
+            OK
+        </button>
+    </section>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusUrl = '{% url "order_status_data" table_number=table.number order_id=order.id %}';
+        const alertOverlay = document.getElementById('completion-alert');
+        const alertTitle = document.getElementById('completion-alert-title');
+        const alertMessage = document.getElementById('completion-alert-message');
+        const dismissButton = document.getElementById('completion-alert-dismiss');
+        const statusMessage = document.getElementById('order-status-message');
+        const statusSteps = document.querySelectorAll('[data-order-status]');
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        let orderStatus = '{{ order.status }}';
+        let completionAudioContext = null;
+        let completionChimeTimer = null;
+        let alertsUnlocked = false;
+
+        function playCompletionChime() {
+            if (!completionAudioContext || completionAudioContext.state === 'closed') {
+                return;
+            }
+
+            completionAudioContext.resume().then(function() {
+                const startTime = completionAudioContext.currentTime;
+                const gainNode = completionAudioContext.createGain();
+                gainNode.connect(completionAudioContext.destination);
+                gainNode.gain.setValueAtTime(0.0001, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.25, startTime + 0.02);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.7);
+
+                [659.25, 783.99].forEach(function(frequency, index) {
+                    const oscillator = completionAudioContext.createOscillator();
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = frequency;
+                    oscillator.connect(gainNode);
+                    oscillator.start(startTime + (index * 0.18));
+                    oscillator.stop(startTime + 0.7);
+                });
+            }).catch(function() {});
+        }
+
+        function startAlert(status) {
+            window.clearInterval(completionChimeTimer);
+            alertTitle.textContent = status === 'completed' ? 'Order complete!' : 'Your order is ready!';
+            alertMessage.textContent = 'Your order {{ order.order_number }} is ready. Collect your order now at the counter.';
+            alertOverlay.hidden = false;
+            dismissButton.focus();
+            playCompletionChime();
+            completionChimeTimer = window.setInterval(playCompletionChime, 1000);
+
+            if (alertsUnlocked && 'vibrate' in navigator) {
+                navigator.vibrate([400, 150, 400, 150, 600]);
+            }
+        }
+
+        function unlockAlerts() {
+            if (AudioContextClass && !completionAudioContext) {
+                completionAudioContext = new AudioContextClass();
+            }
+            if (completionAudioContext) {
+                completionAudioContext.resume().then(function() {
+                    alertsUnlocked = true;
+                    if (!alertOverlay.hidden) {
+                        playCompletionChime();
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate([400, 150, 400, 150, 600]);
+                        }
+                    }
+                }).catch(function() {});
+            }
+        }
+
+        document.addEventListener('pointerdown', unlockAlerts, {once: true});
+        document.addEventListener('touchstart', unlockAlerts, {once: true, passive: true});
+        document.addEventListener('keydown', unlockAlerts, {once: true});
+
+        dismissButton.addEventListener('click', function() {
+            if (AudioContextClass && !completionAudioContext) {
+                completionAudioContext = new AudioContextClass();
+            }
+
+            const dismissAlert = function() {
+                window.clearInterval(completionChimeTimer);
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(0);
+                }
+                alertOverlay.hidden = true;
+            };
+
+            if (completionAudioContext) {
+                completionAudioContext.resume().catch(function() {});
+                alertsUnlocked = true;
+                playCompletionChime();
+                window.setTimeout(dismissAlert, 750);
+            } else {
+                dismissAlert();
+            }
+        });
+
+        function updateProgress(status) {
+            const progressOrder = ['confirmed', 'preparing', 'ready', 'completed'];
+            const normalizedStatus = status === 'pending' ? 'confirmed' : status;
+            const currentIndex = progressOrder.indexOf(normalizedStatus);
+
+            statusSteps.forEach(function(step) {
+                const stepIndex = progressOrder.indexOf(step.dataset.orderStatus);
+                const orderIsCompleted = status === 'completed';
+                step.classList.toggle('completed', currentIndex >= 0 && (stepIndex < currentIndex || orderIsCompleted));
+                step.classList.toggle('active', !orderIsCompleted && stepIndex === currentIndex);
+            });
+
+            statusMessage.classList.toggle('success', status === 'ready' || status === 'completed');
+            if (status === 'ready' || status === 'completed') {
+                statusMessage.innerHTML = '<i class="fas fa-check-circle"></i> Your order is ready! Please collect it at the counter.';
+            } else if (status === 'cancelled') {
+                statusMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> Your order has been cancelled.';
+            } else {
+                statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> Your order is being prepared. Please wait...';
+            }
+        }
+
+        function pollOrderStatus() {
+            fetch(statusUrl, {cache: 'no-store'})
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Unable to check order status');
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
+                    updateProgress(data.status);
+                    if (data.status !== orderStatus) {
+                        orderStatus = data.status;
+                        if (orderStatus === 'ready' || orderStatus === 'completed') {
+                            startAlert(orderStatus);
+                        }
+                    }
+                })
+                .catch(function() {});
+        }
+
+        if (orderStatus === 'completed') {
+            startAlert(orderStatus);
+        } else if (orderStatus !== 'cancelled') {
+            window.setInterval(pollOrderStatus, 5000);
+        }
+    });
+</script>
+{% endblock %}

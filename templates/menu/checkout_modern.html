@@ -1,0 +1,58 @@
+{% extends "menu/base_modern.html" %}
+
+{% block title %}Thank You | BurgerBills{% endblock %}
+
+{% block nav_items %}
+    <a href="{% url 'table_menu' table.number %}">Menu</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-thank-you {
+        min-height: 60vh;
+        display: grid;
+        place-items: center;
+        padding: var(--spacing-2xl) var(--spacing-md);
+        text-align: center;
+    }
+
+    .checkout-thank-you-content {
+        width: min(100%, 520px);
+    }
+
+    .checkout-success-icon {
+        width: 72px;
+        height: 72px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto var(--spacing-lg);
+        border-radius: 50%;
+        background: var(--success-color);
+        color: white;
+        font-size: var(--font-size-3xl);
+        box-shadow: var(--shadow-md);
+    }
+
+    .checkout-thank-you h1 {
+        margin-bottom: var(--spacing-md);
+    }
+
+    .checkout-thank-you p {
+        margin-bottom: var(--spacing-xl);
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="checkout-thank-you">
+    <div class="checkout-thank-you-content">
+        <div class="checkout-success-icon" aria-hidden="true">✓</div>
+        <h1>Thank you for ordering</h1>
+        <p>Your order has been received. Follow its progress and see when it is ready.</p>
+        <a href="{% url 'order_status' table.number order.id %}" class="btn btn-primary">
+            View order status
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BurgerBills - Modern Restaurant Menu{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap Icons (for optional use) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body {% block body_attrs %}{% endblock %} data-table="{{ table.number }}">
+    <div class="wrapper">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <a class="header-brand" href="/" aria-label="Burger Bills home">
+                        <img class="header-logo-image" src="{% static 'images/logo.png' %}" alt="BurgerBills logo">
+                        <span class="restaurant-heading">
+                            <span class="restaurant-heading-name">Burger <strong>Bills</strong></span>
+                            <span class="restaurant-heading-tagline">Service Delicious Food</span>
+                        </span>
+                    </a>
+                    <div class="header-table-number" aria-label="Table {{ table.number }}">{{ table.number }}</div>
+                    <div class="header-actions">
+                        {% block header_actions %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <div class="container">
+                <p>@ 2026 Burger Bills (C.A)</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Orders Sidebar -->
+    <div class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Your Orders</h3>
+            <button class="cart-close" aria-label="Close orders">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="cart-body">
+            <div class="cart-empty">
+                <div class="cart-empty-icon">🛒</div>
+                <p>Your orders are empty</p>
+                <small class="text-muted">Choose an item from the menu to get started</small>
+            </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-summary">
+                <span>Total:</span>
+                <span class="cart-total">$0.00</span>
+            </div>
+            <button class="btn btn-primary btn-block btn-checkout" onclick="window.cartManager?.openCheckout?.()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div class="modal-overlay"></div>
+
+    <!-- Modal -->
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Modal Title</h2>
+            <button class="modal-close" aria-label="Close modal">×</button>
+        </div>
+        <div class="modal-body"></div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="window.cartManager?.closeModal?.()">Cancel</button>
+            <button class="btn btn-primary">Confirm</button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Animations JS -->
+    <script src="{% static 'js/animations.js' %}"></script>
+    
+    <!-- Orders JS -->
+    <script src="{% static 'js/cart.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

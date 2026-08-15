@@ -1,0 +1,181 @@
+{% extends "menu/base_modern.html" %}
+{% load static %}
+
+{% block title %}Order {{ order.order_number }} | BurgerBills{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: var(--spacing-2xl) 0; max-width: 700px;">
+    
+    <!-- Confirmation Header -->
+    <div style="text-align: center; padding: var(--spacing-2xl) 0; border-bottom: 2px solid var(--border-color); margin-bottom: var(--spacing-2xl);">
+        <div style="font-size: 4rem; margin-bottom: var(--spacing-lg);">✓</div>
+        <h1 style="color: var(--success-color); margin-bottom: var(--spacing-md);">Order Confirmed!</h1>
+        <p style="font-size: var(--font-size-lg); color: var(--text-secondary);">
+            Thank you for your order, {{ order.customer_name }}
+        </p>
+    </div>
+
+    <!-- Order Information -->
+    <div style="background: white; padding: var(--spacing-xl); border-radius: 12px; margin-bottom: var(--spacing-xl); box-shadow: var(--shadow-md); border-top: 4px solid var(--accent-color);">
+        <h3 style="margin-bottom: var(--spacing-lg);">📋 Order Details</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);">
+            <div>
+                <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">ORDER NUMBER</p>
+                <p style="font-size: var(--font-size-lg); font-weight: 700; color: var(--accent-color);">{{ order.order_number }}</p>
+            </div>
+            <div>
+                <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">ORDER TIME</p>
+                <p style="font-size: var(--font-size-lg); font-weight: 700;">{{ order.created_at|date:"g:i A" }}</p>
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: var(--spacing-lg) 0;">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+            <div>
+                <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">SERVICE TYPE</p>
+                <p style="font-size: var(--font-size-base); font-weight: 600;">
+                    {% if order.order_type == 'dine_in' %}
+                        🍽️ Dine In - Table {{ order.table.number }}
+                    {% else %}
+                        🏠 Pickup
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">EST. TIME</p>
+                <p style="font-size: var(--font-size-base); font-weight: 600;">
+                    ⏱️ {{ order.estimated_time }} minutes
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div style="background: white; padding: var(--spacing-xl); border-radius: 12px; margin-bottom: var(--spacing-xl); box-shadow: var(--shadow-md);">
+        <h3 style="margin-bottom: var(--spacing-lg);">🍔 Your Order</h3>
+        
+        <div style="margin-bottom: var(--spacing-lg);">
+            {% for item in order.items.all %}
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md) 0; border-bottom: 1px solid var(--border-color);">
+                <div style="flex: 1;">
+                    <strong style="display: block; margin-bottom: var(--spacing-xs);">
+                        {{ item.quantity }}x {{ item.menu_item.name }}
+                    </strong>
+                    {% if item.special_requests %}
+                    <p style="font-size: var(--font-size-sm); color: var(--text-secondary);">
+                        📝 {{ item.special_requests }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div style="font-weight: 600; color: var(--accent-color); text-align: right; min-width: 80px;">
+                    ${{ item.get_subtotal }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: var(--font-size-lg); font-weight: 700; padding-top: var(--spacing-lg); border-top: 2px solid var(--border-color);">
+            <span>Total Amount:</span>
+            <span style="color: var(--accent-color);">${{ order.total_amount }}</span>
+        </div>
+    </div>
+
+    <!-- Customer Info -->
+    {% if order.customer_name or order.customer_phone or order.customer_email %}
+    <div style="background: var(--primary-light); padding: var(--spacing-xl); border-radius: 12px; margin-bottom: var(--spacing-xl);">
+        <h3 style="margin-bottom: var(--spacing-lg);">👤 Customer Information</h3>
+        
+        {% if order.customer_name %}
+        <p><strong>Name:</strong> {{ order.customer_name }}</p>
+        {% endif %}
+        
+        {% if order.customer_phone %}
+        <p><strong>Phone:</strong> {{ order.customer_phone }}</p>
+        {% endif %}
+        
+        {% if order.customer_email %}
+        <p><strong>Email:</strong> {{ order.customer_email }}</p>
+        {% endif %}
+        
+        {% if order.special_instructions %}
+        <p style="margin-top: var(--spacing-md);"><strong>Special Instructions:</strong></p>
+        <p style="background: white; padding: var(--spacing-md); border-radius: 6px; border-left: 4px solid var(--accent-color);">
+            {{ order.special_instructions }}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Order Status -->
+    <div style="background: white; padding: var(--spacing-xl); border-radius: 12px; margin-bottom: var(--spacing-xl); box-shadow: var(--shadow-md);">
+        <h3 style="margin-bottom: var(--spacing-lg);">📊 Order Status</h3>
+        
+        <div style="display: flex; justify-content: space-between; position: relative;">
+            <!-- Status Timeline -->
+            <div style="flex: 1;">
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
+                    
+                    <!-- Confirmed -->
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--success-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+                            ✓
+                        </div>
+                        <div>
+                            <strong>Order Confirmed</strong>
+                            <p style="font-size: var(--font-size-sm); color: var(--text-secondary);">{{ order.created_at|date:"M d, g:i A" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Preparing -->
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md); opacity: {% if order.status == 'pending' or order.status == 'confirmed' %}0.5{% else %}1{% endif %};">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: {% if order.status == 'pending' or order.status == 'confirmed' %}var(--border-color){% else %}var(--success-color){% endif %}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+                            {% if order.status == 'pending' or order.status == 'confirmed' %}⏳{% else %}✓{% endif %}
+                        </div>
+                        <div>
+                            <strong>Preparing</strong>
+                            <p style="font-size: var(--font-size-sm); color: var(--text-secondary);">In progress...</p>
+                        </div>
+                    </div>
+
+                    <!-- Ready -->
+                    <div style="display: flex; align-items: center; gap: var(--spacing-md); opacity: {% if order.status == 'ready' or order.status == 'completed' %}1{% else %}0.5{% endif %};">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: {% if order.status == 'ready' or order.status == 'completed' %}var(--success-color){% else %}var(--border-color){% endif %}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+                            {% if order.status == 'ready' or order.status == 'completed' %}✓{% else %}⏳{% endif %}
+                        </div>
+                        <div>
+                            <strong>Ready for {% if order.order_type == 'dine_in' %}Service{% else %}Pickup{% endif %}</strong>
+                            <p style="font-size: var(--font-size-sm); color: var(--text-secondary);">Waiting...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+        <a href="{% url 'table_menu' table.number %}" class="btn btn-ghost" style="flex: 1;">
+            Add More Items
+        </a>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="window.location.reload();">
+            Refresh Status
+        </button>
+    </div>
+
+    <!-- Help Text -->
+    <div style="background: #e3f2fd; padding: var(--spacing-lg); border-radius: 8px; border-left: 4px solid #2196f3; color: #1565c0;">
+        <p><strong>💡 Tip:</strong> Your order has been confirmed! Your meal will be prepared shortly. A staff member will call {{ order.customer_name or 'your table' }} when your order is ready.</p>
+    </div>
+
+</div>
+
+<script>
+// Auto-refresh status every 10 seconds
+setTimeout(function() {
+    location.reload();
+}, 10000);
+</script>
+
+{% endblock %}

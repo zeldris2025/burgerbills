@@ -1,0 +1,310 @@
+{% extends 'menu/customer_base.html' %}
+
+{% block title %}Receipt - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body {
+            background: white;
+        }
+        .container-main {
+            padding: 0;
+        }
+        .navbar, .footer, .print-button, .no-print {
+            display: none;
+        }
+        .receipt-container {
+            box-shadow: none;
+            padding: 0;
+        }
+    }
+
+    .receipt-container {
+        max-width: 500px;
+        margin: 2rem auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        font-family: 'Courier New', monospace;
+    }
+
+    .receipt-header {
+        text-align: center;
+        border-bottom: 2px dashed #333;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .receipt-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #FF6B35;
+        margin-bottom: 0.5rem;
+    }
+
+    .receipt-subtitle {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.3rem;
+    }
+
+    .receipt-divider {
+        border-bottom: 1px dashed #ccc;
+        margin: 1rem 0;
+    }
+
+    .receipt-line {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.3rem 0;
+        font-size: 0.9rem;
+    }
+
+    .receipt-line.total {
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-top: 1px solid #333;
+        border-bottom: 1px solid #333;
+        padding: 0.5rem 0;
+        margin: 0.5rem 0;
+    }
+
+    .receipt-items-title {
+        font-weight: 700;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        text-decoration: underline;
+    }
+
+    .receipt-item {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        padding: 0.3rem 0;
+        border-bottom: 1px dotted #e0e0e0;
+    }
+
+    .receipt-item-name {
+        grid-column: 1 / -1;
+        font-weight: 600;
+    }
+
+    .receipt-item-qty {
+        text-align: center;
+    }
+
+    .receipt-item-price {
+        text-align: right;
+    }
+
+    .receipt-notes {
+        background: #f5f5f5;
+        padding: 0.5rem;
+        margin: 1rem 0;
+        border-radius: 3px;
+        font-size: 0.85rem;
+        color: #666;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+
+    .receipt-footer {
+        text-align: center;
+        padding-top: 1rem;
+        border-top: 2px dashed #333;
+        margin-top: 1rem;
+    }
+
+    .receipt-message {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+
+    .receipt-time {
+        font-size: 0.85rem;
+        color: #999;
+        margin-bottom: 1rem;
+    }
+
+    .print-button {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .btn-print {
+        background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .btn-print:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+    }
+
+    .btn-back {
+        background: #f5f5f5;
+        color: #333;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 5px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .btn-back:hover {
+        background: #e0e0e0;
+    }
+
+    .thank-you {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #004E89;
+        margin: 1rem 0 0.5rem;
+    }
+
+    .qr-section {
+        text-align: center;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 2px dashed #333;
+    }
+
+    .qr-text {
+        font-size: 0.8rem;
+        color: #999;
+        margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+        .receipt-container {
+            margin: 1rem;
+            padding: 1rem;
+        }
+
+        .receipt-title {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-container">
+    <!-- Header -->
+    <div class="receipt-header">
+        <div class="receipt-title">🍔 BURGER BILLS</div>
+        <div class="receipt-subtitle">Your Receipt</div>
+    </div>
+
+    <!-- Order Details -->
+    <div class="receipt-line">
+        <span>Order #:</span>
+        <span style="font-weight: 700;">{{ order.order_number }}</span>
+    </div>
+
+    <div class="receipt-line">
+        <span>Table #:</span>
+        <span style="font-weight: 700;">{{ table.number }}</span>
+    </div>
+
+    <div class="receipt-line">
+        <span>Date & Time:</span>
+        <span>{{ order.created_at|date:"M d, Y H:i" }}</span>
+    </div>
+
+    <div class="receipt-divider"></div>
+
+    <!-- Items -->
+    <div class="receipt-items-title">Items Ordered:</div>
+
+    {% for item in order.items.all %}
+        <div class="receipt-item">
+            <div class="receipt-item-name">{{ item.menu_item.name }}</div>
+            <div class="receipt-item-qty">x{{ item.quantity }}</div>
+            <div class="receipt-item-price">${{ item.get_subtotal }}</div>
+            {% if item.special_requests %}
+                <div style="grid-column: 1 / -1; color: #999; font-size: 0.8rem;">
+                    → {{ item.special_requests }}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <!-- Totals -->
+    <div class="receipt-divider"></div>
+
+    <div class="receipt-line">
+        <span>Subtotal:</span>
+        <span>${{ order.total_amount }}</span>
+    </div>
+
+    <div class="receipt-line">
+        <span>Tax (0%):</span>
+        <span>$0.00</span>
+    </div>
+
+    <div class="receipt-line total">
+        <span>Total:</span>
+        <span>${{ order.total_amount }}</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="receipt-footer">
+        <div class="thank-you">Thank You!</div>
+
+        {% if order.status != 'completed' %}
+            <div class="receipt-message">
+                Your order is being prepared.<br>
+                Please check the order status on your device.
+            </div>
+        {% else %}
+            <div class="receipt-message">
+                Your order is ready!<br>
+                Please collect it at the counter.
+            </div>
+        {% endif %}
+
+        <div class="receipt-time">
+            Generated: {{ "now"|date:"M d, Y H:i:s" }}
+        </div>
+
+        <div class="receipt-message">
+            We hope you enjoy your meal!<br>
+            Thank you for dining with us.
+        </div>
+
+        <div class="qr-section">
+            <div class="qr-text">Scan to track order:</div>
+            <div style="font-size: 0.8rem; color: #999;">
+                Order: {{ order.order_number }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="print-button">
+    <button class="btn-print" onclick="window.print()">
+        <i class="fas fa-print"></i> Print Receipt
+    </button>
+    <a href="{% url 'order_status' table_number=table.number order_id=order.id %}" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+{% endblock %}
