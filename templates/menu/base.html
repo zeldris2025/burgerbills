@@ -196,7 +196,7 @@
 
         .marquee-container {
             background: #171717;
-            padding: 1rem 0;
+            padding: 0.75rem 0;
             overflow: hidden;
             white-space: nowrap;
             position: relative;
@@ -206,7 +206,7 @@
         .marquee-content {
             display: inline-flex;
             align-items: center;
-            gap: 3rem;
+            gap: 2.5rem;
             animation: scroll-left 30s linear infinite;
             padding-right: 100%;
         }
@@ -223,23 +223,23 @@
         }
 
         .marquee-icon {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             line-height: 1;
         }
 
         .marquee-text {
-            font-size: 1.35rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: white;
             letter-spacing: 0;
         }
 
         .marquee-offer {
-            padding: 0.45rem 0.85rem;
+            padding: 0.35rem 0.7rem;
             border-radius: 4px;
             background: #ff6b35;
             color: white;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 800;
             letter-spacing: 0.05em;
             text-transform: uppercase;
@@ -247,7 +247,7 @@
 
         @keyframes scroll-left {
             0% {
-                transform: translateX(0);
+                transform: translateX(100vw);
             }
             100% {
                 transform: translateX(-100%);
@@ -311,7 +311,7 @@
             <div class="restaurant-navbar-heading{% if table %} table-number-badge{% endif %}"{% if table %} aria-label="Table {{ table.number }}"{% endif %}>
                 {% if table %}{{ table.number }}{% else %}Service Delicious Food{% endif %}
             </div>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            {% block navigation %}<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -352,7 +352,7 @@
                         </li>
                     {% endif %}
                 </ul>
-            </div>
+            </div>{% endblock %}
         </div>
     </nav>
 

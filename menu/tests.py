@@ -21,16 +21,20 @@ def tearDownModule():
 
 
 class LandingPageTests(TestCase):
-	def test_root_opens_staff_panel(self):
+	def test_root_renders_public_website(self):
 		response = self.client.get(reverse("index"))
 
-		self.assertRedirects(response, reverse("staff_panel"), fetch_redirect_response=False)
-
-	def test_signed_out_root_access_reaches_staff_login(self):
-		response = self.client.get(reverse("index"), follow=True)
-
 		self.assertEqual(response.status_code, 200)
-		self.assertTemplateUsed(response, "menu/staff_login.html")
+		self.assertTemplateUsed(response, "menu/index.html")
+		self.assertContains(response, "Burger Bills")
+		self.assertContains(response, "scan your table's QR code")
+
+	def test_root_has_no_staff_admin_or_customer_links(self):
+		response = self.client.get(reverse("index"))
+
+		self.assertNotContains(response, 'href="/staff/')
+		self.assertNotContains(response, 'href="/admin/')
+		self.assertNotContains(response, 'href="/table/')
 
 
 class OrderItemTests(TestCase):
@@ -41,6 +45,33 @@ class OrderItemTests(TestCase):
 
 
 class TableQrCodeTests(TestCase):
+	def test_direct_table_url_is_rejected_without_qr_token(self):
+		table = Table.objects.create(number=102)
+
+		response = self.client.get(reverse("table_menu", args=[table.number]))
+
+		self.assertEqual(response.status_code, 404)
+
+	def test_qr_token_grants_table_session_access(self):
+		table = Table.objects.create(number=103)
+
+		response = self.client.get(
+			reverse("table_menu", args=[table.number]),
+			{"access": str(table.qr_access_token)},
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(self.client.session["qr_table_number"], table.number)
+		self.assertEqual(
+			self.client.get(reverse("current_order_items", args=[table.number])).status_code,
+			200,
+		)
+
+	def test_qr_menu_url_contains_unpredictable_table_token(self):
+		table = Table.objects.create(number=104)
+
+		self.assertIn(f"access={table.qr_access_token}", table.get_qr_menu_url())
+
 	def test_request_recreates_qr_code_when_image_was_deleted(self):
 		with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
 			table = Table.objects.create(number=100)
@@ -116,6 +147,10 @@ class CancelOrderItemTests(TestCase):
 			quantity=1,
 			unit_price="15.00",
 		)
+		self.client.get(
+			reverse("table_menu", args=[table.number]),
+			{"access": str(table.qr_access_token)},
+		)
 
 		response = self.client.post(
 			reverse("remove_from_cart", args=[table.number, first_item.pk]),
@@ -143,6 +178,10 @@ class CheckoutTests(TestCase):
 			quantity=1,
 			unit_price="12.00",
 		)
+		self.client.get(
+			reverse("table_menu", args=[table.number]),
+			{"access": str(table.qr_access_token)},
+		)
 
 		response = self.client.get(reverse("checkout", args=[table.number]))
 
@@ -157,6 +196,12 @@ class CheckoutTests(TestCase):
 
 
 class OrderCompletionAlertTests(TestCase):
+	def authorize_table(self, table):
+		return self.client.get(
+			reverse("table_menu", args=[table.number]),
+			{"access": str(table.qr_access_token)},
+		)
+
 	def test_status_endpoint_returns_live_order_state(self):
 		table = Table.objects.create(number=95)
 		order = Order.objects.create(
@@ -164,6 +209,7 @@ class OrderCompletionAlertTests(TestCase):
 			table=table,
 			status="ready",
 		)
+		self.authorize_table(table)
 
 		response = self.client.get(
 			reverse("order_status_data", args=[table.number, order.pk]),
@@ -179,6 +225,7 @@ class OrderCompletionAlertTests(TestCase):
 			table=table,
 			status="completed",
 		)
+		self.authorize_table(table)
 
 		response = self.client.get(
 			reverse("order_status", args=[table.number, order.pk]),
@@ -205,6 +252,7 @@ class OrderCompletionAlertTests(TestCase):
 			table=table,
 			status="preparing",
 		)
+		self.authorize_table(table)
 
 		response = self.client.get(
 			reverse("order_status", args=[table.number, order.pk]),

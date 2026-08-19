@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 import qrcode
 import io
+import uuid
 from django.core.files import File
 from PIL import Image
 
@@ -70,6 +72,7 @@ class Table(models.Model):
     number = models.IntegerField(unique=True)
     capacity = models.IntegerField(default=4)
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
+    qr_access_token = models.UUIDField(default=uuid.uuid4, editable=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -86,7 +89,7 @@ class Table(models.Model):
                 box_size=10,
                 border=4,
             )
-            qr.add_data(f"http://192.168.1.213:8000/table/{self.number}/menu/")
+            qr.add_data(self.get_qr_menu_url())
             qr.make(fit=True)
 
             img = qr.make_image(fill_color="black", back_color="white")
@@ -101,6 +104,10 @@ class Table(models.Model):
             self.qr_code.save(filename, File(buffer), save=False)
 
         super().save(*args, **kwargs)
+
+    def get_qr_menu_url(self):
+        base_url = settings.QR_CODE_BASE_URL.rstrip('/')
+        return f"{base_url}/table/{self.number}/menu/?access={self.qr_access_token}"
 
     class Meta:
         ordering = ['number']

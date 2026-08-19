@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import FileResponse, JsonResponse, HttpResponse
+from django.http import FileResponse, JsonResponse, HttpResponse, Http404
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -13,8 +13,21 @@ from .models import Category, MenuItem, Table, Order, OrderItem
 
 
 def index(request):
-    """Open the staff workspace as the system landing page."""
-    return redirect('staff_panel')
+    """Show the public Burger Bills website without ordering entry points."""
+    return render(request, 'menu/index.html')
+
+
+def _get_customer_table(request, table_number):
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    supplied_token = request.GET.get('access')
+
+    if supplied_token and supplied_token == str(table.qr_access_token):
+        request.session['qr_table_number'] = table.number
+
+    if request.session.get('qr_table_number') != table.number:
+        raise Http404('Scan the QR code at your table to access ordering.')
+
+    return table
 
 
 @require_GET
@@ -28,7 +41,7 @@ def table_menu(request, table_number):
     """Customer menu view for a specific table - Modern responsive design"""
     from datetime import timedelta
     
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     
     # Get all categories with their available items, ordered by order field
     categories = Category.objects.prefetch_related(
@@ -70,7 +83,7 @@ def add_to_order(request, table_number):
     """Add item to order via AJAX"""
     from datetime import timedelta
     
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     
     try:
         data = json.loads(request.body)
@@ -136,7 +149,7 @@ def add_to_order(request, table_number):
 @require_http_methods(["GET"])
 def current_order_items(request, table_number):
     """Return the current pending order for the Orders panel."""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     order = Order.objects.filter(table=table, status='pending').first()
 
     if not order:
@@ -169,7 +182,7 @@ def current_order_items(request, table_number):
 @require_http_methods(["POST"])
 def update_order_item(request, table_number, item_id):
     """Update quantity of item in order"""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     
     try:
         data = json.loads(request.body)
@@ -203,7 +216,7 @@ def update_order_item(request, table_number, item_id):
 
 def view_cart(request, table_number):
     """View shopping cart"""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     
     try:
         order = Order.objects.get(table=table, status='pending')
@@ -219,7 +232,7 @@ def view_cart(request, table_number):
 
 def checkout(request, table_number):
     """Confirm the pending order and show a simple status handoff."""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
 
     order = Order.objects.filter(table=table, status='pending').first()
     if order and order.items.exists():
@@ -245,7 +258,7 @@ def checkout(request, table_number):
 @require_http_methods(["POST"])
 def remove_from_cart(request, table_number, item_id):
     """Cancel an item in the current pending order."""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     
     try:
         order = Order.objects.get(table=table, status='pending')
@@ -280,7 +293,7 @@ def remove_from_cart(request, table_number, item_id):
 @require_http_methods(["POST"])
 def submit_order(request, table_number):
     """Submit order to kitchen"""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     
     try:
         order = Order.objects.get(table=table, status='pending')
@@ -309,7 +322,7 @@ def submit_order(request, table_number):
 
 def order_status(request, table_number, order_id):
     """Check order status"""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
@@ -322,7 +335,7 @@ def order_status(request, table_number, order_id):
 @require_GET
 def order_status_data(request, table_number, order_id):
     """Return the current order state for customer-side polling."""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
     return JsonResponse({
         'status': order.status,
@@ -332,7 +345,7 @@ def order_status_data(request, table_number, order_id):
 
 def order_confirmation(request, table_number, order_id):
     """Order confirmation page - Modern responsive design"""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
@@ -344,7 +357,7 @@ def order_confirmation(request, table_number, order_id):
 
 def receipt(request, table_number, order_id):
     """Display receipt"""
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    table = _get_customer_table(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
