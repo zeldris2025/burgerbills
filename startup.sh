@@ -2,6 +2,7 @@
 set -eu
 
 python manage.py migrate --noinput
+python manage.py regenerate_qr_codes
 python manage.py collectstatic --noinput
 
 exec gunicorn burgerbills.wsgi:application \

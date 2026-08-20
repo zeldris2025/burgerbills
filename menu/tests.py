@@ -1,6 +1,8 @@
 import tempfile
 
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -70,7 +72,10 @@ class TableQrCodeTests(TestCase):
 	def test_qr_menu_url_contains_unpredictable_table_token(self):
 		table = Table.objects.create(number=104)
 
-		self.assertIn(f"access={table.qr_access_token}", table.get_qr_menu_url())
+		self.assertEqual(
+			table.get_qr_menu_url(),
+			f"https://burgerbills.ws/table/104/menu/?access={table.qr_access_token}",
+		)
 
 	def test_request_recreates_qr_code_when_image_was_deleted(self):
 		with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
@@ -95,6 +100,19 @@ class TableQrCodeTests(TestCase):
 		table.save()
 
 		self.assertEqual(table.qr_code.name, qr_code_name)
+
+	def test_regeneration_command_replaces_existing_qr_code(self):
+		table = Table.objects.create(number=105)
+		qr_code_name = table.qr_code.name
+		table.qr_code.storage.delete(qr_code_name)
+		table.qr_code.storage.save(qr_code_name, ContentFile(b"stale QR code"))
+
+		call_command("regenerate_qr_codes", verbosity=0)
+		table.refresh_from_db()
+
+		self.assertEqual(table.qr_code.name, qr_code_name)
+		with table.qr_code.open("rb") as qr_code_file:
+			self.assertEqual(qr_code_file.read(8), b"\x89PNG\r\n\x1a\n")
 
 
 class OrderAdminTests(TestCase):

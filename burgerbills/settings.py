@@ -181,5 +181,5 @@ if os.environ.get('AZURE_STORAGE_CONNECTION_STRING'):
 
 QR_CODE_BASE_URL = os.environ.get(
     'QR_CODE_BASE_URL',
-    'http://localhost:8000' if DEBUG else 'https://burgerbills.ws',
+    'https://burgerbills.ws',
 )
