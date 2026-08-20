@@ -311,7 +311,7 @@ body > .footer {
     overflow: hidden;
     background:
         linear-gradient(rgba(16,25,16,.12), rgba(16,25,16,.44)),
-        url('../images/logo.png') center/340px auto no-repeat,
+        url("../images/logo.b65d0c970484.png") center/340px auto no-repeat,
         #293d2a;
 }
 
