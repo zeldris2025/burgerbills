@@ -182,6 +182,25 @@ class StaffOrderReceiptTests(TestCase):
 
 
 class LogoutTests(TestCase):
+	def test_refresh_only_runs_on_authenticated_staff_panel(self):
+		login_response = self.client.get(reverse("staff_login"))
+
+		self.assertNotContains(login_response, "location.reload()")
+
+		staff_user = get_user_model().objects.create_user(
+			username="staff-refresh",
+			password="password",
+			is_staff=True,
+		)
+		self.client.force_login(staff_user)
+
+		panel_response = self.client.get(reverse("staff_panel"))
+
+		self.assertContains(
+			panel_response,
+			"setTimeout(() => location.reload(), 5000)",
+		)
+
 	def test_staff_logout_clears_session_and_returns_to_staff_login(self):
 		staff_user = get_user_model().objects.create_user(
 			username="staff-logout",
@@ -214,6 +233,46 @@ class LogoutTests(TestCase):
 
 		self.assertRedirects(response, reverse("manager_login"))
 		self.assertNotIn("_auth_user_id", self.client.session)
+
+
+class MarqueeSettingsTests(TestCase):
+	def test_customer_menu_uses_configured_marquee(self):
+		from .models import MarqueeSettings
+
+		settings = MarqueeSettings.load()
+		settings.customer_message = "Customer special: free fries today"
+		settings.save()
+		table = Table.objects.create(number=94)
+
+		response = self.client.get(
+			reverse("table_menu", args=[table.number]),
+			{"access": str(table.qr_access_token)},
+		)
+
+		self.assertContains(response, settings.customer_message, count=2)
+
+	def test_staff_panel_uses_configured_marquee(self):
+		from .models import MarqueeSettings
+
+		settings = MarqueeSettings.load()
+		settings.staff_message = "Staff reminder: check pickup orders"
+		settings.save()
+		staff_user = get_user_model().objects.create_user(
+			username="staff-marquee",
+			password="password",
+			is_staff=True,
+		)
+		self.client.force_login(staff_user)
+
+		response = self.client.get(reverse("staff_panel"))
+
+		self.assertContains(response, settings.staff_message)
+
+	def test_marquee_settings_are_available_in_admin(self):
+		from django.contrib import admin
+		from .models import MarqueeSettings
+
+		self.assertIn(MarqueeSettings, admin.site._registry)
 
 
 class CancelOrderItemTests(TestCase):

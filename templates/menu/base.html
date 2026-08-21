@@ -363,28 +363,15 @@
         </div>
     </nav>
 
+    {% if staff_marquee %}
     <div class="marquee-container">
-        <div class="marquee-content" aria-label="Gyro promotion: buy two and get one free">
+        <div class="marquee-content" aria-label="Staff announcement">
             <div class="marquee-item">
-                <span class="marquee-icon" aria-hidden="true">🌯</span>
-                <span class="marquee-text">New Beef Gyro</span>
-            </div>
-            <div class="marquee-item">
-                <span class="marquee-offer">Buy 2, Get 1 Free</span>
-            </div>
-            <div class="marquee-item">
-                <span class="marquee-icon" aria-hidden="true">🌯</span>
-                <span class="marquee-text">New Chicken Gyro</span>
-            </div>
-            <div class="marquee-item" aria-hidden="true">
-                <span class="marquee-offer">Buy 2, Get 1 Free</span>
-            </div>
-            <div class="marquee-item" aria-hidden="true">
-                <span class="marquee-icon">🌯</span>
-                <span class="marquee-text">Beef Gyro + Chicken Gyro</span>
+                <span class="marquee-text">{{ staff_marquee }}</span>
             </div>
         </div>
     </div>
+    {% endif %}
 
     <div class="container-main">
         {% if messages %}

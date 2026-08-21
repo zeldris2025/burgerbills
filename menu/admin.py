@@ -1,5 +1,16 @@
 from django.contrib import admin
-from .models import Category, MenuItem, Table, Order, OrderItem
+from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
+
+
+@admin.register(MarqueeSettings)
+class MarqueeSettingsAdmin(admin.ModelAdmin):
+    fields = ('customer_message', 'staff_message')
+
+    def has_add_permission(self, request):
+        return not MarqueeSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Category)

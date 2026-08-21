@@ -9,7 +9,7 @@ from decimal import Decimal
 import json
 from datetime import datetime
 
-from .models import Category, MenuItem, Table, Order, OrderItem
+from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
 
 
 def index(request):
@@ -73,6 +73,9 @@ def table_menu(request, table_number):
         'table': table,
         'categories': categories,
         'current_order': current_order,
+        'customer_marquee': MarqueeSettings.load().customer_message.replace(
+            '{table_number}', str(table.number)
+        ),
     }
     return render(request, 'menu/customer_menu_modern.html', context)
 
@@ -585,6 +588,7 @@ def staff_panel(request):
         'total_pending': pending_orders.count(),
         'total_preparing': preparing_orders.count(),
         'total_ready': ready_orders.count(),
+        'staff_marquee': MarqueeSettings.load().staff_message,
     }
     return render(request, 'menu/staff_panel.html', context)
 

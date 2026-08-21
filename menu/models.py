@@ -8,6 +8,33 @@ from django.core.files import File
 from PIL import Image
 
 
+class MarqueeSettings(models.Model):
+    customer_message = models.CharField(
+        max_length=300,
+        default="Welcome to BurgerBills • Table {table_number} • Explore our delicious menu and enjoy seamless ordering",
+        help_text="Use {table_number} to display the customer's table number.",
+    )
+    staff_message = models.CharField(
+        max_length=300,
+        default="New Beef Gyro • Buy 2, Get 1 Free • New Chicken Gyro",
+    )
+
+    @classmethod
+    def load(cls):
+        settings, _ = cls.objects.get_or_create(pk=1)
+        return settings
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Marquee settings"
+
+    class Meta:
+        verbose_name_plural = "Marquee settings"
+
+
 class Category(models.Model):
     """Menu categories like Burgers, Drinks, Sides, etc."""
     name = models.CharField(max_length=100, unique=True)
