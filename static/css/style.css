@@ -2,6 +2,12 @@
    MODERN RESTAURANT MENU - MAIN STYLESHEET
    ============================================ */
 
+@font-face {
+  font-family: 'Cheeseburger';
+  src: url('../fonts/CHEESEBU.TTF') format('truetype');
+  font-display: swap;
+}
+
 :root {
   /* Color Scheme */
   --primary-dark: #1a1a1a;
@@ -402,7 +408,7 @@ header {
 }
 
 .restaurant-heading-name {
-  font-family: var(--font-family-display);
+  font-family: 'Cheeseburger', cursive;
   font-size: var(--font-size-2xl);
   font-weight: 700;
   white-space: nowrap;

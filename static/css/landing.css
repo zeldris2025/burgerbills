@@ -1,3 +1,9 @@
+@font-face {
+    font-family: 'Cheeseburger';
+    src: url('../fonts/CHEESEBU.TTF') format('truetype');
+    font-display: swap;
+}
+
 :root {
     --landing-ink: #181512;
     --landing-paper: #f6f0e6;
@@ -54,7 +60,7 @@ body > .footer {
 }
 
 .landing-brand span {
-    font-family: 'Cheese Burger', cursive;
+    font-family: 'Cheeseburger', cursive;
     font-size: 1.15rem;
     letter-spacing: 0;
 }
@@ -250,13 +256,13 @@ body > .footer {
     font-weight: 400;
     line-height: 1.08;
     letter-spacing: 0;
-}
+/* }
 
-    font-family: 'Cheese Burger', cursive;
+    font-family: 'Cheeseburger', cursive;
     margin: 0 0 3rem;
     color: #625c53;
     font-size: clamp(1.05rem, 1.5vw, 1.25rem);
-    line-height: 1.8;
+    line-height: 1.8; */
 }
 
 .ingredient-grid {
@@ -354,7 +360,7 @@ body > .footer {
 
 .landing-footer strong {
     color: #fff;
-    font-family: 'Rye', serif;
+    font-family: 'Cheeseburger', cursive;
     font-size: 1rem;
     font-weight: 400;
 }

@@ -54,7 +54,9 @@ body > .footer {
 }
 
 .landing-brand span {
-    font-family: 'Rye', serif;
+    font-family: 'Cheeseburger', cursive;
+    src: url('assets/fonts/Cheeseburger.woff2') format('woff2'),
+       url('assets/fonts/Cheeseburger.ttf') format('truetype');
     font-size: 1.15rem;
     letter-spacing: 0;
 }
@@ -250,14 +252,13 @@ body > .footer {
     font-weight: 400;
     line-height: 1.08;
     letter-spacing: 0;
-}
+/* }
 
-.story-copy > p {
-    max-width: 650px;
+    font-family: 'Cheeseburger', cursive;
     margin: 0 0 3rem;
     color: #625c53;
     font-size: clamp(1.05rem, 1.5vw, 1.25rem);
-    line-height: 1.8;
+    line-height: 1.8; */
 }
 
 .ingredient-grid {
