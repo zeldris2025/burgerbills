@@ -145,6 +145,77 @@ class OrderAdminTests(TestCase):
 		self.assertFalse(Order.objects.filter(pk=order.pk).exists())
 
 
+class StaffOrderReceiptTests(TestCase):
+	def setUp(self):
+		self.table = Table.objects.create(number=96)
+		self.order = Order.objects.create(
+			order_number="ORD-STAFF-RECEIPT",
+			table=self.table,
+			total_amount="12.00",
+		)
+
+	def test_staff_can_view_order_receipt(self):
+		staff_user = get_user_model().objects.create_user(
+			username="staff-receipt",
+			password="password",
+			is_staff=True,
+		)
+		self.client.force_login(staff_user)
+
+		response = self.client.get(reverse("staff_order_receipt", args=[self.order.pk]))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTemplateUsed(response, "menu/receipt.html")
+		self.assertContains(response, self.order.order_number)
+		self.assertContains(response, f'href="{reverse("all_orders")}"')
+
+	def test_non_staff_cannot_view_order_receipt(self):
+		customer = get_user_model().objects.create_user(
+			username="customer-receipt",
+			password="password",
+		)
+		self.client.force_login(customer)
+
+		response = self.client.get(reverse("staff_order_receipt", args=[self.order.pk]))
+
+		self.assertRedirects(response, reverse("staff_login"))
+
+
+class LogoutTests(TestCase):
+	def test_staff_logout_clears_session_and_returns_to_staff_login(self):
+		staff_user = get_user_model().objects.create_user(
+			username="staff-logout",
+			password="password",
+			is_staff=True,
+		)
+		self.client.force_login(staff_user)
+
+		panel_response = self.client.get(reverse("staff_panel"))
+		self.assertContains(panel_response, f'href="{reverse("staff_logout")}"')
+		self.assertNotContains(panel_response, 'href="/admin/logout/"')
+
+		response = self.client.get(reverse("staff_logout"))
+
+		self.assertRedirects(response, reverse("staff_login"))
+		self.assertNotIn("_auth_user_id", self.client.session)
+
+	def test_manager_logout_clears_session_and_returns_to_manager_login(self):
+		manager = get_user_model().objects.create_superuser(
+			username="manager-logout",
+			email="manager@example.com",
+			password="password",
+		)
+		self.client.force_login(manager)
+
+		panel_response = self.client.get(reverse("manager_panel"))
+		self.assertContains(panel_response, f'href="{reverse("manager_logout")}"')
+
+		response = self.client.get(reverse("manager_logout"))
+
+		self.assertRedirects(response, reverse("manager_login"))
+		self.assertNotIn("_auth_user_id", self.client.session)
+
+
 class CancelOrderItemTests(TestCase):
 	def test_cancel_item_updates_total_and_deletes_empty_order(self):
 		table = Table.objects.create(number=98)

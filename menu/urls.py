@@ -31,11 +31,13 @@ urlpatterns = [
     path('staff/login/', views.staff_login, name='staff_login'),
     path('staff/logout/', views.staff_logout, name='staff_logout'),
     path('staff/panel/', views.staff_panel, name='staff_panel'),
+    path('staff/order/<int:order_id>/receipt/', views.staff_order_receipt, name='staff_order_receipt'),
     path('staff/order/<int:order_id>/update-status/', views.staff_update_status, name='staff_update_status'),
     path('staff/order/<int:order_id>/call-customer/', views.staff_call_customer, name='staff_call_customer'),
 
     # Manager login & staff management routes
     path('manager/login/', views.manager_login, name='manager_login'),
+    path('manager/logout/', views.manager_logout, name='manager_logout'),
     path('manager/panel/', views.manager_panel, name='manager_panel'),
     path('manager/create-staff-user/', views.create_staff_user, name='create_staff_user'),
     path('manager/delete-staff-user/<int:user_id>/', views.delete_staff_user, name='delete_staff_user'),

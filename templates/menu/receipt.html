@@ -302,7 +302,7 @@
     <button class="btn-print" onclick="window.print()">
         <i class="fas fa-print"></i> Print Receipt
     </button>
-    <a href="{% url 'order_status' table_number=table.number order_id=order.id %}" class="btn-back">
+    <a href="{% if staff_receipt %}{% url 'all_orders' %}{% else %}{% url 'order_status' table_number=table.number order_id=order.id %}{% endif %}" class="btn-back">
         <i class="fas fa-arrow-left"></i> Back
     </a>
 </div>

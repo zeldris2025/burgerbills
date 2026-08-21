@@ -590,6 +590,20 @@ def staff_panel(request):
 
 
 @login_required(login_url='staff_login')
+def staff_order_receipt(request, order_id):
+    """Display an order receipt to authenticated staff."""
+    if not request.user.is_staff:
+        return redirect('staff_login')
+
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'menu/receipt.html', {
+        'table': order.table,
+        'order': order,
+        'staff_receipt': True,
+    })
+
+
+@login_required(login_url='staff_login')
 @require_http_methods(["POST"])
 def staff_update_status(request, order_id):
     """Staff update order status"""
@@ -660,6 +674,13 @@ def manager_login(request):
             return render(request, 'menu/manager_login.html', context)
     
     return render(request, 'menu/manager_login.html')
+
+
+def manager_logout(request):
+    """Manager logout"""
+    from django.contrib.auth import logout
+    logout(request)
+    return redirect('manager_login')
 
 
 @login_required(login_url='manager_login')
