@@ -77,7 +77,7 @@ def table_menu(request, table_number):
             '{table_number}', str(table.number)
         ),
     }
-    return render(request, 'menu/customer_menu_modern.html', context)
+    return render(request, 'menu/customer_menu_fresh.html', context)
 
 
 @csrf_exempt
@@ -145,6 +145,35 @@ def add_to_order(request, table_number):
 
     except MenuItem.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def update_item_notes(request, table_number):
+    """Update special requests for an order item"""
+    table = _get_customer_table(request, table_number)
+
+    try:
+        data = json.loads(request.body)
+        menu_item_id = data.get('menu_item_id')
+        special_requests = data.get('special_requests', '').strip()
+
+        # Get the pending order
+        order = Order.objects.filter(table=table, status='pending').first()
+        if not order:
+            return JsonResponse({'success': False, 'message': 'No pending order'}, status=404)
+
+        # Find and update the order item
+        order_item = order.items.filter(menu_item_id=menu_item_id).first()
+        if order_item:
+            order_item.special_requests = special_requests
+            order_item.save()
+            return JsonResponse({'success': True, 'message': 'Notes updated'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Item not in order'}, status=404)
+
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
