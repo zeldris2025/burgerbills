@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'Cheeseburger';
-    src: url('../fonts/CHEESEBU.TTF') format('truetype');
+    src: url("../fonts/CHEESEBU.a35319cd9cdc.TTF") format('truetype');
     font-display: swap;
 }
 
@@ -316,7 +316,7 @@ body > .footer {
     overflow: hidden;
     background:
         linear-gradient(rgba(16,25,16,.12), rgba(16,25,16,.44)),
-        url('../images/logo.png') center/340px auto no-repeat,
+        url("../images/logo.d630faa44924.png") center/340px auto no-repeat,
         #293d2a;
 }
 
