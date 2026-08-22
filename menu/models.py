@@ -1,3 +1,9 @@
+"""
+Burger Bills - Restaurant Menu Management System
+Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
+Proprietary and confidential. Unauthorized copying or distribution is prohibited.
+"""
+
 from django.db import models
 from django.utils import timezone
 from django.conf import settings

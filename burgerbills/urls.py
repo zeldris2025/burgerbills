@@ -1,4 +1,9 @@
-"""burgerbills URL Configuration
+"""
+Burger Bills - Restaurant Menu Management System
+Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
+Proprietary and confidential. Unauthorized copying or distribution is prohibited.
+
+burgerbills URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/2.2/topics/http/urls/

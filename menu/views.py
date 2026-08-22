@@ -1,3 +1,9 @@
+"""
+Burger Bills - Restaurant Menu Management System
+Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
+Proprietary and confidential. Unauthorized copying or distribution is prohibited.
+"""
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, JsonResponse, HttpResponse, Http404
 from django.views.decorators.http import require_GET, require_http_methods

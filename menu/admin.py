@@ -1,3 +1,9 @@
+"""
+Burger Bills - Restaurant Menu Management System
+Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
+Proprietary and confidential. Unauthorized copying or distribution is prohibited.
+"""
+
 from django.contrib import admin
 from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
 

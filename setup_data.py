@@ -1,3 +1,9 @@
+"""
+Burger Bills - Restaurant Menu Management System
+Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
+Proprietary and confidential. Unauthorized copying or distribution is prohibited.
+"""
+
 from menu.models import Category, MenuItem, Table
 
 # Create categories
