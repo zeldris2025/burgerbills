@@ -18,20 +18,70 @@ from datetime import datetime
 from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
 
 
+class AccessDeniedException(Exception):
+    """Custom exception for menu access denial"""
+    pass
+
+
+def handle_access_denied(view_func):
+    """Decorator to handle AccessDeniedException and display access denied page"""
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view_func(request, *args, **kwargs)
+        except AccessDeniedException as e:
+            return render(request, 'menu/access_denied.html', {
+                'error_message': str(e),
+            }, status=403)
+    return wrapper
+
+
 def index(request):
     """Show the public Burger Bills website without ordering entry points."""
     return render(request, 'menu/index.html')
 
 
 def _get_customer_table(request, table_number):
-    table = get_object_or_404(Table, number=table_number, is_active=True)
+    from datetime import timedelta
+
+    try:
+        table = get_object_or_404(Table, number=table_number, is_active=True)
+    except Http404:
+        raise AccessDeniedException('Table not found. Please scan the QR code at your table.')
+
     supplied_token = request.GET.get('access')
 
-    if supplied_token and supplied_token == str(table.qr_access_token):
-        request.session['qr_table_number'] = table.number
+    # If access token is provided (from QR code), validate and create new session
+    if supplied_token:
+        if supplied_token == str(table.qr_access_token):
+            # Valid QR code scan - create/update session
+            request.session['qr_table_number'] = table.number
+            request.session['qr_access_time'] = timezone.now().isoformat()
+            request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
+            request.session.set_expiry(table.menu_access_timeout_minutes * 60)
+        else:
+            # Invalid access token
+            raise AccessDeniedException('Invalid QR code. Please scan the QR code at your table.')
 
+    # Check if user has valid session access
     if request.session.get('qr_table_number') != table.number:
-        raise Http404('Scan the QR code at your table to access ordering.')
+        raise AccessDeniedException('Access denied. Please scan the QR code at your table to access the menu.')
+
+    # Check if session has expired due to inactivity
+    access_time_str = request.session.get('qr_access_time')
+    timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
+
+    if access_time_str:
+        from datetime import datetime as dt
+        access_time = dt.fromisoformat(access_time_str)
+        expiry_time = access_time + timedelta(minutes=timeout_minutes)
+
+        if timezone.now() > expiry_time:
+            # Session has expired
+            request.session.flush()
+            raise AccessDeniedException('Your menu access has expired. Please scan the QR code at your table again.')
+
+        # Update last activity time
+        request.session['qr_access_time'] = timezone.now().isoformat()
 
     return table
 
@@ -43,6 +93,7 @@ def table_qr_code(request, table_number):
     return FileResponse(table.qr_code.open('rb'), content_type='image/png')
 
 
+@handle_access_denied
 def table_menu(request, table_number):
     """Customer menu view for a specific table - Modern responsive design"""
     from datetime import timedelta
@@ -86,6 +137,7 @@ def table_menu(request, table_number):
     return render(request, 'menu/customer_menu_fresh.html', context)
 
 
+@handle_access_denied
 @csrf_exempt
 @require_http_methods(["POST"])
 def add_to_order(request, table_number):
@@ -155,6 +207,7 @@ def add_to_order(request, table_number):
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
+@handle_access_denied
 @csrf_exempt
 @require_http_methods(["POST"])
 def update_item_notes(request, table_number):
@@ -252,6 +305,7 @@ def update_order_item(request, table_number, item_id):
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
+@handle_access_denied
 def view_cart(request, table_number):
     """View shopping cart"""
     table = _get_customer_table(request, table_number)
@@ -268,6 +322,7 @@ def view_cart(request, table_number):
     return render(request, 'menu/cart.html', context)
 
 
+@handle_access_denied
 def checkout(request, table_number):
     """Confirm the pending order and show a simple status handoff."""
     table = _get_customer_table(request, table_number)
@@ -292,6 +347,7 @@ def checkout(request, table_number):
     return render(request, 'menu/checkout_modern.html', context)
 
 
+@handle_access_denied
 @csrf_exempt
 @require_http_methods(["POST"])
 def remove_from_cart(request, table_number, item_id):
@@ -327,6 +383,7 @@ def remove_from_cart(request, table_number, item_id):
         )
 
 
+@handle_access_denied
 @csrf_exempt
 @require_http_methods(["POST"])
 def submit_order(request, table_number):
@@ -358,6 +415,7 @@ def submit_order(request, table_number):
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
+@handle_access_denied
 def order_status(request, table_number, order_id):
     """Check order status"""
     table = _get_customer_table(request, table_number)
@@ -381,6 +439,7 @@ def order_status_data(request, table_number, order_id):
     })
 
 
+@handle_access_denied
 def order_confirmation(request, table_number, order_id):
     """Order confirmation page - Modern responsive design"""
     table = _get_customer_table(request, table_number)

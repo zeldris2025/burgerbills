@@ -106,8 +106,15 @@ class Table(models.Model):
     capacity = models.IntegerField(default=4)
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     qr_access_token = models.UUIDField(default=uuid.uuid4, editable=False)
+    qr_code_generated_at = models.DateTimeField(default=timezone.now, help_text="Timestamp when QR code was last generated")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Security: Menu access expires after this many minutes of inactivity
+    menu_access_timeout_minutes = models.IntegerField(
+        default=30,
+        help_text="Customer menu access expires after this many minutes of inactivity"
+    )
 
     def __str__(self):
         return f"Table {self.number}"

@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - Burger Bills</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FF6B35 0%, #004E89 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .message-box {
+            background: #f8f9fa;
+            border-left: 4px solid #FF6B35;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: left;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .instructions {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: left;
+            color: #2e7d32;
+            font-size: 0.9rem;
+        }
+
+        .instructions strong {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .qr-icon {
+            font-size: 2.5rem;
+            margin: 15px 0;
+        }
+
+        footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .logo-section {
+            margin-bottom: 20px;
+        }
+
+        .logo-section img {
+            height: 40px;
+            width: auto;
+        }
+
+        .error-reason {
+            color: #FF6B35;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="logo-section">
+            <img src="{% static 'images/logo.png' %}" alt="Burger Bills Logo">
+        </div>
+
+        <div class="error-icon">🔒</div>
+
+        <h1>Access Denied</h1>
+        <p>You need to scan your table's QR code to access the menu.</p>
+
+        <div class="message-box">
+            <strong>Why am I seeing this?</strong>
+            <p>For security, the menu can only be accessed through the QR code at your table. Direct links are not allowed to prevent unauthorized orders.</p>
+        </div>
+
+        <div class="instructions">
+            <strong>How to proceed:</strong>
+            <ol>
+                <li>Look for the QR code on your table</li>
+                <li>Use your phone to scan the QR code</li>
+                <li>The menu will load automatically</li>
+                <li>Browse and place your order</li>
+            </ol>
+        </div>
+
+        <div class="error-reason">
+            ⏱️ Your access has expired. Scan the QR code again to continue.
+        </div>
+
+        <p style="margin-top: 20px; font-size: 0.85rem; color: #999;">
+            If you don't see a QR code or need assistance, please ask a staff member.
+        </p>
+
+        <footer>
+            <p>&copy; 2026 Burger Bills. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
