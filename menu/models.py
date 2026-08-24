@@ -112,7 +112,7 @@ class Table(models.Model):
 
     # Security: Menu access expires after this many minutes of inactivity
     menu_access_timeout_minutes = models.IntegerField(
-        default=30,
+        default=60,
         help_text="Customer menu access expires after this many minutes of inactivity"
     )
 

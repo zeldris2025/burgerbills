@@ -232,11 +232,6 @@
     </style>
   </div>
 
-  <!-- SESSION TIMER -->
-  <div id="session-timer" style="background: #fff3cd; border-bottom: 2px solid #ffc107; padding: 12px 20px; text-align: center; font-weight: 600; color: #856404; display: none;">
-    ⏱️ Your session expires in: <span id="timer-display">--:--</span>
-  </div>
-
   <!-- MAIN CONTENT -->
   <main class="container">
 
@@ -375,76 +370,6 @@
   <script>
     let cart = {};
     const TABLE_NUMBER = {{ table.number }};
-
-    // Session Timer
-    function initializeSessionTimer() {
-      const timerElement = document.getElementById('session-timer');
-      const timerDisplay = document.getElementById('timer-display');
-
-      // Get session data from cookies (Django stores it)
-      function getSessionExpiry() {
-        // Django session is stored server-side, but we can estimate from server time
-        // Make a quick fetch to get server time and calculate expiry
-        fetch(window.location.href)
-          .then(response => {
-            const serverDate = new Date(response.headers.get('date'));
-            // For now, we'll use a local estimate
-            // The server will refresh the timer on each request
-            updateSessionDisplay();
-          })
-          .catch(() => updateSessionDisplay());
-      }
-
-      function updateSessionDisplay() {
-        // This will be updated by checking session via AJAX
-        fetch(`/table/${TABLE_NUMBER}/session-time/`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.expires_in) {
-              timerElement.style.display = 'block';
-              updateTimerDisplay(data.expires_in);
-
-              // Update every second
-              setInterval(() => {
-                data.expires_in -= 1;
-                updateTimerDisplay(data.expires_in);
-
-                if (data.expires_in <= 0) {
-                  timerElement.style.background = '#f8d7da';
-                  timerElement.style.color = '#721c24';
-                  timerDisplay.textContent = 'EXPIRED';
-                  timerDisplay.style.color = '#dc3545';
-                }
-              }, 1000);
-            }
-          })
-          .catch(() => {
-            // If endpoint doesn't exist yet, hide timer
-            timerElement.style.display = 'none';
-          });
-      }
-
-      function updateTimerDisplay(seconds) {
-        if (seconds < 0) seconds = 0;
-        const minutes = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        timerDisplay.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
-
-        // Change color based on time remaining
-        if (seconds <= 300) { // 5 minutes or less
-          timerElement.style.background = '#f8d7da';
-          timerElement.style.color = '#721c24';
-        } else if (seconds <= 600) { // 10 minutes or less
-          timerElement.style.background = '#fff3cd';
-          timerElement.style.color = '#856404';
-        }
-      }
-
-      getSessionExpiry();
-    }
-
-    // Initialize timer on page load
-    document.addEventListener('DOMContentLoaded', initializeSessionTimer);
 
     function switchCategory(categoryId) {
       // Hide all sections
