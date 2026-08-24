@@ -111,7 +111,7 @@ header {
   color: white;
   font-weight: 700;
   font-size: 1.1rem;
-  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 4px 15px rgba(229, 57, 53, 0.3);
 }
 
 .header-right {
@@ -168,7 +168,7 @@ header {
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.2);
+  box-shadow: 0 8px 24px rgba(229, 57, 53, 0.2);
 }
 
 /* ============================================
@@ -398,12 +398,12 @@ header {
   font-weight: 600;
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2);
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.2);
 }
 
 .add-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 8px 20px rgba(229, 57, 53, 0.3);
 }
 
 .add-btn:active {
