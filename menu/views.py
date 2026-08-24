@@ -24,14 +24,22 @@ class AccessDeniedException(Exception):
 
 
 def handle_access_denied(view_func):
-    """Decorator to handle AccessDeniedException and display access denied page"""
+    """Decorator to handle AccessDeniedException and display access denied page or JSON error"""
     def wrapper(request, *args, **kwargs):
         try:
             return view_func(request, *args, **kwargs)
         except AccessDeniedException as e:
-            return render(request, 'menu/access_denied.html', {
-                'error_message': str(e),
-            }, status=403)
+            # Check if this is an AJAX/JSON request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'POST':
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e),
+                    'message': str(e)
+                }, status=403)
+            else:
+                return render(request, 'menu/access_denied.html', {
+                    'error_message': str(e),
+                }, status=403)
     return wrapper
 
 
@@ -55,7 +63,7 @@ def _get_customer_table(request, table_number):
         if supplied_token == str(table.qr_access_token):
             # Valid QR code scan - create/update session
             request.session['qr_table_number'] = table.number
-            request.session['qr_access_time'] = timezone.now().isoformat()
+            request.session['qr_session_start_time'] = timezone.now().isoformat()
             request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
             request.session.set_expiry(table.menu_access_timeout_minutes * 60)
         else:
@@ -66,22 +74,19 @@ def _get_customer_table(request, table_number):
     if request.session.get('qr_table_number') != table.number:
         raise AccessDeniedException('Access denied. Please scan the QR code at your table to access the menu.')
 
-    # Check if session has expired due to inactivity
-    access_time_str = request.session.get('qr_access_time')
+    # Check if session has expired (hard timeout from initial scan time)
+    session_start_str = request.session.get('qr_session_start_time')
     timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
 
-    if access_time_str:
+    if session_start_str:
         from datetime import datetime as dt
-        access_time = dt.fromisoformat(access_time_str)
-        expiry_time = access_time + timedelta(minutes=timeout_minutes)
+        session_start = dt.fromisoformat(session_start_str)
+        session_expiry = session_start + timedelta(minutes=timeout_minutes)
 
-        if timezone.now() > expiry_time:
-            # Session has expired
+        if timezone.now() > session_expiry:
+            # Session has expired (hard timeout)
             request.session.flush()
             raise AccessDeniedException('Your menu access has expired. Please scan the QR code at your table again.')
-
-        # Update last activity time
-        request.session['qr_access_time'] = timezone.now().isoformat()
 
     return table
 
@@ -148,12 +153,12 @@ def session_time(request, table_number):
         return JsonResponse({'error': 'Invalid or expired session'}, status=403)
 
     # Get session expiry information
-    access_time_str = request.session.get('qr_access_time')
+    session_start_str = request.session.get('qr_session_start_time')
     timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
 
-    if access_time_str:
-        access_time = dt.fromisoformat(access_time_str)
-        expiry_time = access_time + timezone.timedelta(minutes=timeout_minutes)
+    if session_start_str:
+        session_start = dt.fromisoformat(session_start_str)
+        expiry_time = session_start + timezone.timedelta(minutes=timeout_minutes)
         expires_in = int((expiry_time - timezone.now()).total_seconds())
 
         # Ensure it doesn't go negative
@@ -162,7 +167,7 @@ def session_time(request, table_number):
         return JsonResponse({
             'expires_in': expires_in,
             'timeout_minutes': timeout_minutes,
-            'access_time': access_time_str,
+            'session_start_time': session_start_str,
             'expiry_time': expiry_time.isoformat(),
         })
     else:
