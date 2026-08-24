@@ -137,6 +137,38 @@ def table_menu(request, table_number):
     return render(request, 'menu/customer_menu_fresh.html', context)
 
 
+@require_GET
+def session_time(request, table_number):
+    """Get remaining session time for the table menu"""
+    from datetime import datetime as dt
+
+    try:
+        table = _get_customer_table(request, table_number)
+    except AccessDeniedException:
+        return JsonResponse({'error': 'Invalid or expired session'}, status=403)
+
+    # Get session expiry information
+    access_time_str = request.session.get('qr_access_time')
+    timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
+
+    if access_time_str:
+        access_time = dt.fromisoformat(access_time_str)
+        expiry_time = access_time + timezone.timedelta(minutes=timeout_minutes)
+        expires_in = int((expiry_time - timezone.now()).total_seconds())
+
+        # Ensure it doesn't go negative
+        expires_in = max(0, expires_in)
+
+        return JsonResponse({
+            'expires_in': expires_in,
+            'timeout_minutes': timeout_minutes,
+            'access_time': access_time_str,
+            'expiry_time': expiry_time.isoformat(),
+        })
+    else:
+        return JsonResponse({'error': 'No active session'}, status=403)
+
+
 @handle_access_denied
 @csrf_exempt
 @require_http_methods(["POST"])
