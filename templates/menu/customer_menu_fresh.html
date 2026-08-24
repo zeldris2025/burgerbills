@@ -37,7 +37,7 @@
 
     .qop-header {
       padding: 1rem;
-      background: linear-gradient(135deg, #FF6B35, #E55A2B);
+      background: linear-gradient(135deg, #E53935, #C62828);
       color: white;
       font-weight: 600;
       border-radius: 16px 16px 0 0;
@@ -83,7 +83,7 @@
       padding: 0.75rem;
       border-radius: 8px;
       margin-bottom: 0.75rem;
-      border-left: 3px solid #FF6B35;
+      border-left: 3px solid #E53935;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -95,7 +95,7 @@
     }
 
     .qop-item-qty {
-      background: #FF6B35;
+      background: #E53935;
       color: white;
       width: 24px;
       height: 24px;
@@ -124,14 +124,14 @@
     }
 
     #qop-total-price {
-      color: #FF6B35;
+      color: #E53935;
       font-size: 1.3rem;
     }
 
     .qop-checkout-btn {
       width: 100%;
       padding: 0.75rem;
-      background: linear-gradient(135deg, #FF6B35, #E55A2B);
+      background: linear-gradient(135deg, #E53935, #C62828);
       color: white;
       border: none;
       border-radius: 8px;
@@ -215,7 +215,7 @@
   </header>
 
   <!-- MARQUEE BANNER -->
-  <div style="background: linear-gradient(135deg, #FF6B35, #E55A2B); color: white; overflow: hidden; padding: 0.8rem 0;">
+  <div style="background: linear-gradient(135deg, #E53935, #C62828); color: white; overflow: hidden; padding: 0.8rem 0;">
     <div style="display: flex; animation: marquee 20s linear infinite; white-space: nowrap;">
       <span style="padding: 0 2rem;">✨ Welcome to Burger Bills!</span>
       <span style="padding: 0 2rem;">🍔 Explore our delicious menu</span>
@@ -341,7 +341,7 @@
     <div style="background: white; max-width: 600px; margin: 20px auto; border-radius: 16px; padding: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
 
       <!-- Cart Header -->
-      <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #FF6B35, #E55A2B); color: white; border-radius: 16px 16px 0 0;">
+      <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #E53935, #C62828); color: white; border-radius: 16px 16px 0 0;">
         <h2 style="margin: 0; font-size: 1.3rem; font-family: 'Playfair Display', serif;">📋 Your Order</h2>
         <button onclick="closeCart()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">✕</button>
       </div>
@@ -358,9 +358,9 @@
       <div style="padding: 20px; border-top: 1px solid #e5e7eb; background: #fafbfc; border-radius: 0 0 16px 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 1.1rem; font-weight: 600;">
           <span>Total:</span>
-          <span style="color: #FF6B35; font-size: 1.4rem;" id="cart-total">$0.00</span>
+          <span style="color: #E53935; font-size: 1.4rem;" id="cart-total">$0.00</span>
         </div>
-        <button onclick="checkout()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #FF6B35, #E55A2B); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 1rem; cursor: pointer;">
+        <button onclick="checkout()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #E53935, #C62828); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 1rem; cursor: pointer;">
           Proceed to Checkout
         </button>
       </div>
@@ -485,7 +485,7 @@
                 <span style="margin: 0 10px; font-weight: 600;">${item.quantity}</span>
                 <button onclick="updateQuantity(${id}, 1); updateCartUI();" style="background: white; border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; cursor: pointer;">+</button>
               </div>
-              <strong style="color: #FF6B35;">$${(item.price * item.quantity).toFixed(2)}</strong>
+              <strong style="color: #E53935;">$${(item.price * item.quantity).toFixed(2)}</strong>
             </div>
 
             <!-- Special Requests -->
@@ -581,7 +581,7 @@
         position: fixed;
         bottom: 20px;
         left: 20px;
-        background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#FF6B35'};
+        background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#E53935'};
         color: white;
         padding: 15px 20px;
         border-radius: 10px;
