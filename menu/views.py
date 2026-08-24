@@ -204,8 +204,8 @@ def session_time(request, table_number):
         return JsonResponse({'error': 'No active session'}, status=403)
 
 
-@handle_access_denied
 @csrf_exempt
+@handle_access_denied
 @require_http_methods(["POST"])
 def add_to_order(request, table_number):
     """Add item to order via AJAX"""
@@ -279,8 +279,8 @@ def add_to_order(request, table_number):
         return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=400)
 
 
-@handle_access_denied
 @csrf_exempt
+@handle_access_denied
 @require_http_methods(["POST"])
 def update_item_notes(request, table_number):
     """Update special requests for an order item"""
@@ -419,8 +419,8 @@ def checkout(request, table_number):
     return render(request, 'menu/checkout_modern.html', context)
 
 
-@handle_access_denied
 @csrf_exempt
+@handle_access_denied
 @require_http_methods(["POST"])
 def remove_from_cart(request, table_number, item_id):
     """Cancel an item in the current pending order."""
@@ -455,8 +455,8 @@ def remove_from_cart(request, table_number, item_id):
         )
 
 
-@handle_access_denied
 @csrf_exempt
+@handle_access_denied
 @require_http_methods(["POST"])
 def submit_order(request, table_number):
     """Submit order to kitchen"""
