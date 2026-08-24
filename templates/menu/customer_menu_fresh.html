@@ -390,7 +390,8 @@
       fetch(`/table/${TABLE_NUMBER}/add-to-order/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({
           menu_item_id: itemId,
@@ -524,7 +525,8 @@
           return fetch(`/table/${TABLE_NUMBER}/update-item-notes/`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
               menu_item_id: parseInt(id),
@@ -548,7 +550,8 @@
       fetch(`/table/${TABLE_NUMBER}/submit/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify({})
       })

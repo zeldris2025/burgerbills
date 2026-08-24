@@ -240,8 +240,13 @@ def add_to_order(request, table_number):
 
     except MenuItem.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Item not found'}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid request format'}, status=400)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+        import traceback
+        print(f"Error in add_to_order: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'}, status=400)
 
 
 @handle_access_denied
