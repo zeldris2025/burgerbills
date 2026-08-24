@@ -151,6 +151,28 @@ def table_menu(request, table_number):
 
 
 @require_GET
+def debug_session(request, table_number):
+    """Debug endpoint to check session status"""
+    table = get_object_or_404(Table, number=table_number, is_active=True)
+    supplied_token = request.GET.get('access')
+
+    debug_info = {
+        'table_number': table_number,
+        'table_qr_token': str(table.qr_access_token),
+        'supplied_token': supplied_token,
+        'session_data': {
+            'qr_table_number': request.session.get('qr_table_number'),
+            'qr_session_start_time': request.session.get('qr_session_start_time'),
+            'qr_access_timeout_minutes': request.session.get('qr_access_timeout_minutes'),
+        },
+        'token_match': supplied_token == str(table.qr_access_token) if supplied_token else None,
+        'session_key': request.session.session_key,
+    }
+
+    return JsonResponse(debug_info)
+
+
+@require_GET
 def session_time(request, table_number):
     """Get remaining session time for the table menu"""
     from datetime import datetime as dt
