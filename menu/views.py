@@ -29,16 +29,24 @@ def handle_access_denied(view_func):
         try:
             return view_func(request, *args, **kwargs)
         except AccessDeniedException as e:
+            error_msg = str(e)
+            print(f"AccessDeniedException in {view_func.__name__}: {error_msg}")
+            print(f"Headers: X-Requested-With={request.headers.get('X-Requested-With')}, Method={request.method}")
+
             # Check if this is an AJAX/JSON request
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.method == 'POST':
+            is_ajax = (request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                      request.method in ['POST', 'PUT', 'DELETE'] or
+                      request.headers.get('Content-Type') == 'application/json')
+
+            if is_ajax:
                 return JsonResponse({
                     'success': False,
-                    'error': str(e),
-                    'message': str(e)
+                    'error': error_msg,
+                    'message': error_msg
                 }, status=403)
             else:
                 return render(request, 'menu/access_denied.html', {
-                    'error_message': str(e),
+                    'error_message': error_msg,
                 }, status=403)
     return wrapper
 
