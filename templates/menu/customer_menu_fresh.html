@@ -670,6 +670,7 @@
             },
             body: JSON.stringify({
               menu_item_id: item.itemId,
+              unit_price: item.price,
               special_requests: item.notes
             })
           }).then(res => res.json()).catch(err => console.error('Update error:', err));

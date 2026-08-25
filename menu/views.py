@@ -347,14 +347,23 @@ def update_item_notes(request, table_number):
         data = json.loads(request.body)
         menu_item_id = data.get('menu_item_id')
         special_requests = data.get('special_requests', '').strip()
+        unit_price = data.get('unit_price')  # Price of the size variant
 
         # Get the pending order
         order = Order.objects.filter(table=table, status='pending').first()
         if not order:
             return JsonResponse({'success': False, 'message': 'No pending order'}, status=404)
 
-        # Find and update the order item
-        order_item = order.items.filter(menu_item_id=menu_item_id).first()
+        # Find and update the order item (filter by price if provided to distinguish size variants)
+        query = order.items.filter(menu_item_id=menu_item_id)
+        if unit_price is not None:
+            try:
+                unit_price = Decimal(str(unit_price))
+                query = query.filter(unit_price=unit_price)
+            except (ValueError, TypeError):
+                pass
+
+        order_item = query.first()
         if order_item:
             order_item.special_requests = special_requests
             order_item.save()
