@@ -156,7 +156,7 @@
         </div>
 
         <div class="error-reason">
-            ⏱️ Your access has expired. Scan the QR code again to continue.
+            ⏱️ {{ error_message|default:"Your access has expired. Scan the QR code again to continue." }}
         </div>
 
         <p style="margin-top: 20px; font-size: 0.85rem; color: #999;">

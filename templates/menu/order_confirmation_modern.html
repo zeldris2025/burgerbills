@@ -156,8 +156,8 @@
 
     <!-- Action Buttons -->
     <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
-        <a href="{% url 'table_menu' table.number %}" class="btn btn-ghost" style="flex: 1;">
-            Add More Items
+        <a href="{% url 'receipt' table_number=table.number order_id=order.id %}" class="btn btn-ghost" style="flex: 1;">
+            View Receipt
         </a>
         <button class="btn btn-secondary" style="flex: 1;" onclick="window.location.reload();">
             Refresh Status

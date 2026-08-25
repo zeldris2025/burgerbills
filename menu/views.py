@@ -19,8 +19,19 @@ from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
 
 
 class AccessDeniedException(Exception):
-    """Custom exception for menu access denial"""
-    pass
+    """Custom exception for menu access denial.
+
+    `reason` lets callers distinguish why access was refused:
+        'no_table'   - table does not exist / inactive
+        'invalid'    - QR token did not match
+        'no_session' - never scanned, or scanned a different table
+        'expired'    - session passed its hard timeout
+        'completed'  - order already submitted on this session
+    """
+
+    def __init__(self, message, reason='no_session'):
+        super().__init__(message)
+        self.reason = reason
 
 
 def handle_access_denied(view_func):
@@ -30,8 +41,6 @@ def handle_access_denied(view_func):
             return view_func(request, *args, **kwargs)
         except AccessDeniedException as e:
             error_msg = str(e)
-            print(f"AccessDeniedException in {view_func.__name__}: {error_msg}")
-            print(f"Headers: X-Requested-With={request.headers.get('X-Requested-With')}, Method={request.method}")
 
             # Check if this is an AJAX/JSON request
             is_ajax = (request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
@@ -56,53 +65,71 @@ def index(request):
     return render(request, 'menu/index.html')
 
 
+def _start_qr_session(request, table):
+    """Begin a fresh menu session for a customer who just scanned the table QR code."""
+    request.session['qr_table_number'] = table.number
+    request.session['qr_session_start_time'] = timezone.now().isoformat()
+    request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
+    request.session['qr_order_completed'] = False
+    request.session.set_expiry(table.menu_access_timeout_minutes * 60)
+
+
 def _get_customer_table(request, table_number):
+    """Resolve the table for a customer request, enforcing QR access rules.
+
+    A valid ?access token always starts a brand-new session. `table_menu` strips the
+    token from the URL immediately afterwards, so the one-hour clock is only ever set
+    by a genuine scan and never restarts on a page refresh.
+    """
     from datetime import timedelta
 
     try:
         table = get_object_or_404(Table, number=table_number, is_active=True)
     except Http404:
-        raise AccessDeniedException('Table not found. Please scan the QR code at your table.')
+        raise AccessDeniedException(
+            'Table not found. Please scan the QR code at your table.', reason='no_table'
+        )
 
     supplied_token = request.GET.get('access')
-    current_session_table = request.session.get('qr_table_number')
-    order_completed = request.session.get('qr_order_completed', False)
 
-    # Check if session has expired FIRST (before allowing recreation)
-    session_start_str = request.session.get('qr_session_start_time')
-    timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
-
-    if session_start_str and current_session_table == table.number:
-        from datetime import datetime as dt
-        session_start = dt.fromisoformat(session_start_str)
-        session_expiry = session_start + timedelta(minutes=timeout_minutes)
-
-        if timezone.now() > session_expiry:
-            # Session has expired (hard timeout)
-            request.session['qr_session_expired'] = True
-            raise AccessDeniedException('Your menu access has expired. Please scan the QR code at your table again.')
-
-    # If order was already completed, only allow viewing confirmation (not menu access)
-    # Must rescan QR to start a new session
-    if order_completed and not supplied_token:
-        raise AccessDeniedException('Your order has been completed. Please scan the QR code again to place a new order.')
-
-    # If access token provided, allow creating new session (clears order_completed flag)
+    # A supplied token is a fresh scan of the physical QR code at the table.
     if supplied_token:
-        if supplied_token == str(table.qr_access_token):
-            # Valid QR code scan - create new session
-            request.session['qr_table_number'] = table.number
-            request.session['qr_session_start_time'] = timezone.now().isoformat()
-            request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
-            request.session['qr_order_completed'] = False  # Reset order flag for new session
-            request.session.set_expiry(table.menu_access_timeout_minutes * 60)
-        else:
-            # Invalid access token
-            raise AccessDeniedException('Invalid QR code. Please scan the QR code at your table.')
+        if supplied_token != str(table.qr_access_token):
+            raise AccessDeniedException(
+                'Invalid QR code. Please scan the QR code at your table.', reason='invalid'
+            )
+        _start_qr_session(request, table)
+        return table
 
-    # Check if user has valid session access
+    # No token: the customer must already hold a session for this table.
     if request.session.get('qr_table_number') != table.number:
-        raise AccessDeniedException('Access denied. Please scan the QR code at your table to access the menu.')
+        raise AccessDeniedException(
+            'Access denied. Please scan the QR code at your table to access the menu.',
+            reason='no_session',
+        )
+
+    # Hard timeout measured from the scan, never extended by activity.
+    session_start_str = request.session.get('qr_session_start_time')
+    timeout_minutes = request.session.get(
+        'qr_access_timeout_minutes', table.menu_access_timeout_minutes
+    )
+
+    if session_start_str:
+        from datetime import datetime as dt
+
+        session_start = dt.fromisoformat(session_start_str)
+        if timezone.now() > session_start + timedelta(minutes=timeout_minutes):
+            raise AccessDeniedException(
+                'Your menu access has expired. Please scan the QR code at your table again.',
+                reason='expired',
+            )
+
+    # One order per scan - ordering again requires a new scan.
+    if request.session.get('qr_order_completed', False):
+        raise AccessDeniedException(
+            'Your order has been placed. Please scan the QR code again to start a new order.',
+            reason='completed',
+        )
 
     return table
 
@@ -118,9 +145,15 @@ def table_qr_code(request, table_number):
 def table_menu(request, table_number):
     """Customer menu view for a specific table - Modern responsive design"""
     from datetime import timedelta
-    
+
     table = _get_customer_table(request, table_number)
-    
+
+    # Drop the ?access token from the address bar once the session exists, so a
+    # refresh cannot restart the one-hour clock. A new hour needs a new scan.
+    if request.GET.get('access'):
+        return redirect('table_menu', table_number=table.number)
+
+
     # Get all categories with their available items, ordered by order field
     categories = Category.objects.prefetch_related(
         Prefetch('items', MenuItem.objects.filter(is_available=True).order_by('order'))
@@ -565,16 +598,23 @@ def submit_order(request, table_number):
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
+def _get_table_for_placed_order(request, table_number):
+    """Resolve the table for a view of an order that has already been placed.
+
+    Once an order exists the customer must still be able to watch it, print the
+    receipt and refresh the page after their menu session ends - so these views
+    do not require a live QR session.
+    """
+    try:
+        return _get_customer_table(request, table_number)
+    except AccessDeniedException:
+        return get_object_or_404(Table, number=table_number, is_active=True)
+
+
 @handle_access_denied
 def order_status(request, table_number, order_id):
-    """Check order status - accessible even after session ends"""
-    try:
-        table = _get_customer_table(request, table_number)
-    except AccessDeniedException:
-        # Allow access to order status page even if session expired
-        # (they're just viewing their confirmation, not ordering more)
-        table = get_object_or_404(Table, number=table_number, is_active=True)
-
+    """Check order status - accessible even after the menu session ends"""
+    table = _get_table_for_placed_order(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
@@ -586,18 +626,8 @@ def order_status(request, table_number, order_id):
 
 @require_GET
 def order_status_data(request, table_number, order_id):
-    """Return the current order state for customer-side polling - accessible during and after order."""
-    try:
-        # Try to validate session, but allow if order_completed (still need to poll)
-        table = _get_customer_table(request, table_number)
-    except AccessDeniedException as e:
-        # If only issue is order_completed, still allow polling the order status
-        if 'order has been completed' in str(e):
-            table = get_object_or_404(Table, number=table_number, is_active=True)
-        else:
-            # Other access issues (expired, invalid session) - deny
-            return JsonResponse({'error': str(e)}, status=403)
-
+    """Return the current order state for the customer-side 5 second poll."""
+    table = _get_table_for_placed_order(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
     return JsonResponse({
         'status': order.status,
@@ -607,13 +637,8 @@ def order_status_data(request, table_number, order_id):
 
 @handle_access_denied
 def order_confirmation(request, table_number, order_id):
-    """Order confirmation page - accessible even after session ends"""
-    try:
-        table = _get_customer_table(request, table_number)
-    except AccessDeniedException:
-        # Allow access to confirmation page even if session expired
-        table = get_object_or_404(Table, number=table_number, is_active=True)
-
+    """Order confirmation page - accessible even after the menu session ends"""
+    table = _get_table_for_placed_order(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
@@ -624,13 +649,8 @@ def order_confirmation(request, table_number, order_id):
 
 
 def receipt(request, table_number, order_id):
-    """Display receipt - accessible even after session ends"""
-    try:
-        table = _get_customer_table(request, table_number)
-    except AccessDeniedException:
-        # Allow access to receipt even if session expired
-        table = get_object_or_404(Table, number=table_number, is_active=True)
-
+    """Display receipt - accessible even after the menu session ends"""
+    table = _get_table_for_placed_order(request, table_number)
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
