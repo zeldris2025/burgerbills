@@ -543,8 +543,11 @@
           updateQuickOrderPanel();
 
           // Change button text to "Added"
-          btn.textContent = 'Added';
-          btn.style.opacity = '0.8';
+          const button = document.querySelector(`[data-item-id="${itemId}"] .add-btn`);
+          if (button) {
+            button.textContent = 'Added';
+            button.style.opacity = '0.8';
+          }
 
           // Show quick order panel
           showQuickOrder();
