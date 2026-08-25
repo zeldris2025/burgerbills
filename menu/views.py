@@ -65,16 +65,35 @@ def _get_customer_table(request, table_number):
         raise AccessDeniedException('Table not found. Please scan the QR code at your table.')
 
     supplied_token = request.GET.get('access')
+    current_session_table = request.session.get('qr_table_number')
+
+    # Check if session has expired FIRST (before allowing recreation)
+    session_start_str = request.session.get('qr_session_start_time')
+    timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
+
+    if session_start_str and current_session_table == table.number:
+        from datetime import datetime as dt
+        session_start = dt.fromisoformat(session_start_str)
+        session_expiry = session_start + timedelta(minutes=timeout_minutes)
+
+        if timezone.now() > session_expiry:
+            # Session has expired (hard timeout)
+            # Mark as expired instead of flushing - prevents recreation with same token
+            request.session['qr_session_expired'] = True
+            raise AccessDeniedException('Your menu access has expired. Please scan the QR code at your table again.')
+
+    # Reject any attempt to use access token if session already exists (even if expired)
+    if supplied_token and current_session_table:
+        raise AccessDeniedException('Session already in use. Please scan a new QR code to continue.')
 
     # If access token is provided (from QR code), validate and create new session
     if supplied_token:
         if supplied_token == str(table.qr_access_token):
-            # Valid QR code scan - create/update session
+            # Valid QR code scan - create new session
             request.session['qr_table_number'] = table.number
-            # Only set start time if this is a new session (don't reset on each request)
-            if 'qr_session_start_time' not in request.session:
-                request.session['qr_session_start_time'] = timezone.now().isoformat()
+            request.session['qr_session_start_time'] = timezone.now().isoformat()
             request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
+            request.session['qr_session_expired'] = False
             request.session.set_expiry(table.menu_access_timeout_minutes * 60)
         else:
             # Invalid access token
@@ -83,20 +102,6 @@ def _get_customer_table(request, table_number):
     # Check if user has valid session access
     if request.session.get('qr_table_number') != table.number:
         raise AccessDeniedException('Access denied. Please scan the QR code at your table to access the menu.')
-
-    # Check if session has expired (hard timeout from initial scan time)
-    session_start_str = request.session.get('qr_session_start_time')
-    timeout_minutes = request.session.get('qr_access_timeout_minutes', table.menu_access_timeout_minutes)
-
-    if session_start_str:
-        from datetime import datetime as dt
-        session_start = dt.fromisoformat(session_start_str)
-        session_expiry = session_start + timedelta(minutes=timeout_minutes)
-
-        if timezone.now() > session_expiry:
-            # Session has expired (hard timeout)
-            request.session.flush()
-            raise AccessDeniedException('Your menu access has expired. Please scan the QR code at your table again.')
 
     return table
 
