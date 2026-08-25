@@ -259,16 +259,26 @@ def session_time(request, table_number):
 def add_to_order(request, table_number):
     """Add item to order via AJAX"""
     from datetime import timedelta
-    
+
     table = _get_customer_table(request, table_number)
-    
+
     try:
         data = json.loads(request.body)
         menu_item_id = data.get('menu_item_id')
         quantity = int(data.get('quantity', 1))
         special_requests = data.get('special_requests', '').strip()
+        unit_price = data.get('unit_price')  # Size-specific price from frontend
 
         menu_item = get_object_or_404(MenuItem, id=menu_item_id, is_available=True)
+
+        # Use provided unit_price or fall back to menu item's default price
+        if unit_price is not None:
+            try:
+                unit_price = Decimal(str(unit_price))
+            except (ValueError, TypeError):
+                unit_price = menu_item.price
+        else:
+            unit_price = menu_item.price
 
         # Get or create current order
         order, created = Order.objects.get_or_create(
@@ -293,7 +303,7 @@ def add_to_order(request, table_number):
             special_requests=special_requests,
             defaults={
                 'quantity': quantity,
-                'unit_price': menu_item.price
+                'unit_price': unit_price
             }
         )
 
