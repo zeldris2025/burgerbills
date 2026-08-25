@@ -151,6 +151,8 @@ def table_menu(request, table_number):
 
 
 @csrf_exempt
+@csrf_exempt
+@handle_access_denied
 @require_http_methods(["POST"])
 def get_item(request, table_number):
     """Get item details including sizes"""
