@@ -546,6 +546,10 @@ def submit_order(request, table_number):
         order.status = 'confirmed'
         order.save()
 
+        # Flush session after order is submitted to prevent further menu access
+        # Customer must rescan QR code to place another order
+        request.session.flush()
+
         return JsonResponse({
             'success': True,
             'message': 'Order submitted!',
@@ -562,8 +566,14 @@ def submit_order(request, table_number):
 
 @handle_access_denied
 def order_status(request, table_number, order_id):
-    """Check order status"""
-    table = _get_customer_table(request, table_number)
+    """Check order status - accessible even after session ends"""
+    try:
+        table = _get_customer_table(request, table_number)
+    except AccessDeniedException:
+        # Allow access to order status page even if session expired
+        # (they're just viewing their confirmation, not ordering more)
+        table = get_object_or_404(Table, number=table_number, is_active=True)
+
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
@@ -586,8 +596,13 @@ def order_status_data(request, table_number, order_id):
 
 @handle_access_denied
 def order_confirmation(request, table_number, order_id):
-    """Order confirmation page - Modern responsive design"""
-    table = _get_customer_table(request, table_number)
+    """Order confirmation page - accessible even after session ends"""
+    try:
+        table = _get_customer_table(request, table_number)
+    except AccessDeniedException:
+        # Allow access to confirmation page even if session expired
+        table = get_object_or_404(Table, number=table_number, is_active=True)
+
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
@@ -598,8 +613,13 @@ def order_confirmation(request, table_number, order_id):
 
 
 def receipt(request, table_number, order_id):
-    """Display receipt"""
-    table = _get_customer_table(request, table_number)
+    """Display receipt - accessible even after session ends"""
+    try:
+        table = _get_customer_table(request, table_number)
+    except AccessDeniedException:
+        # Allow access to receipt even if session expired
+        table = get_object_or_404(Table, number=table_number, is_active=True)
+
     order = get_object_or_404(Order, id=order_id, table=table)
 
     context = {
