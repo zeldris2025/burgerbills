@@ -17,6 +17,37 @@
       font-family: 'Cheeseburger', cursive;
     }
 
+    /* Size Selection */
+    .size-btn {
+      padding: 15px 20px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      min-width: 80px;
+    }
+
+    .size-btn:hover {
+      border-color: #E53935;
+      color: #E53935;
+    }
+
+    .size-btn.selected {
+      background: linear-gradient(135deg, #E53935, #C62828);
+      color: white;
+      border-color: #C62828;
+    }
+
+    .size-price {
+      display: block;
+      font-size: 0.8rem;
+      opacity: 0.8;
+      margin-top: 4px;
+    }
+
     /* Quick Order Panel */
     .quick-order-panel {
       position: fixed;
@@ -336,6 +367,22 @@
     <p>© 2026 Burger Bills. All rights reserved.</p>
   </footer>
 
+  <!-- SIZE SELECTION MODAL -->
+  <div id="size-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1001; display: flex; align-items: center; justify-content: center;">
+    <div style="background: white; max-width: 400px; border-radius: 16px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); text-align: center;">
+      <h2 id="size-item-name" style="margin-bottom: 20px; color: #1a1a1a; font-size: 1.3rem;">Select Size</h2>
+
+      <div id="size-options" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 25px;">
+        <!-- Sizes will be inserted here by JavaScript -->
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button onclick="closeSizeModal()" style="flex: 1; padding: 12px; background: #e5e7eb; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Cancel</button>
+        <button onclick="confirmSize()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #E53935, #C62828); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CART MODAL -->
   <div id="cart-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto;">
     <div style="background: white; max-width: 600px; margin: 20px auto; border-radius: 16px; padding: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
@@ -370,6 +417,7 @@
   <script>
     let cart = {};
     const TABLE_NUMBER = {{ table.number }};
+    let pendingSizeSelection = null;
 
     function switchCategory(categoryId) {
       // Hide all sections
@@ -385,6 +433,87 @@
 
     function addToCart(itemId, itemName, price, buttonElement) {
       const btn = event.target;
+
+      // First, fetch item details to check if it has sizes
+      fetch(`/table/${TABLE_NUMBER}/get-item/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          menu_item_id: itemId
+        })
+      })
+      .then(res => res.json())
+      .then(itemData => {
+        if (itemData.has_sizes) {
+          // Show size selection modal
+          showSizeModal(itemId, itemName, itemData.sizes);
+        } else {
+          // Add directly without size selection
+          addItemToCart(itemId, itemName, price);
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching item details:', err);
+        // Fallback: add without size
+        addItemToCart(itemId, itemName, price);
+      });
+    }
+
+    function showSizeModal(itemId, itemName, sizes) {
+      document.getElementById('size-item-name').textContent = itemName;
+      const sizeOptionsDiv = document.getElementById('size-options');
+      sizeOptionsDiv.innerHTML = '';
+
+      Object.entries(sizes).forEach(([sizeKey, sizeData]) => {
+        const btn = document.createElement('button');
+        btn.className = 'size-btn';
+        btn.onclick = (e) => selectSize(e, sizeKey, sizeData.price);
+        btn.innerHTML = `${sizeData.label}<span class="size-price">$${sizeData.price.toFixed(2)}</span>`;
+        sizeOptionsDiv.appendChild(btn);
+      });
+
+      pendingSizeSelection = {
+        itemId: itemId,
+        itemName: itemName,
+        selectedSize: null,
+        selectedPrice: null
+      };
+
+      document.getElementById('size-modal').style.display = 'flex';
+    }
+
+    function selectSize(event, size, price) {
+      // Remove selection from all buttons
+      document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'));
+      // Add selection to clicked button
+      event.target.closest('.size-btn').classList.add('selected');
+      // Store selection
+      pendingSizeSelection.selectedSize = size;
+      pendingSizeSelection.selectedPrice = price;
+    }
+
+    function confirmSize() {
+      if (!pendingSizeSelection.selectedSize) {
+        showNotification('Please select a size', 'error');
+        return;
+      }
+      addItemToCart(
+        pendingSizeSelection.itemId,
+        `${pendingSizeSelection.itemName} (${pendingSizeSelection.selectedSize})`,
+        pendingSizeSelection.selectedPrice
+      );
+      closeSizeModal();
+    }
+
+    function closeSizeModal() {
+      document.getElementById('size-modal').style.display = 'none';
+      pendingSizeSelection = null;
+    }
+
+    function addItemToCart(itemId, itemName, price) {
 
       // Add item directly to backend
       fetch(`/table/${TABLE_NUMBER}/add-to-order/`, {

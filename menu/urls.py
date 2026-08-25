@@ -15,6 +15,7 @@ urlpatterns = [
     path('table/<int:table_number>/menu/', views.table_menu, name='table_menu'),
     path('table/<int:table_number>/session-time/', views.session_time, name='session_time'),
     path('table/<int:table_number>/debug-session/', views.debug_session, name='debug_session'),
+    path('table/<int:table_number>/get-item/', views.get_item, name='get_item'),
     path('table/<int:table_number>/add/', views.add_to_order, name='add_to_order'),
     path('table/<int:table_number>/add-to-order/', views.add_to_order, name='add_to_order_alt'),
     path('table/<int:table_number>/update-item-notes/', views.update_item_notes, name='update_item_notes'),

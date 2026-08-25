@@ -77,6 +77,12 @@ class MenuItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Size options
+    has_sizes = models.BooleanField(default=False, help_text="Enable size options (S, M, L)")
+    size_small_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Price for small size")
+    size_medium_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Price for medium size")
+    size_large_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, help_text="Price for large size")
+
     class Meta:
         ordering = ['category', 'order', 'name']
         indexes = [
@@ -98,6 +104,16 @@ class MenuItem(models.Model):
         if self.is_gluten_free:
             tags.append('Gluten-Free')
         return tags
+
+    def get_sizes(self):
+        """Return size options if available"""
+        if self.has_sizes:
+            return {
+                'S': {'label': 'Small', 'price': float(self.size_small_price)},
+                'M': {'label': 'Medium', 'price': float(self.size_medium_price)},
+                'L': {'label': 'Large', 'price': float(self.size_large_price)},
+            }
+        return None
 
 
 class Table(models.Model):

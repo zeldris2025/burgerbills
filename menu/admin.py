@@ -39,7 +39,8 @@ class MenuItemAdmin(admin.ModelAdmin):
             'fields': ('category', 'name', 'description', 'image')
         }),
         ('Pricing', {
-            'fields': ('price',)
+            'fields': ('price', 'has_sizes', 'size_small_price', 'size_medium_price', 'size_large_price'),
+            'description': 'Enable "has_sizes" to offer size options (S, M, L) with different prices'
         }),
         ('Dietary Tags', {
             'fields': ('is_vegetarian', 'is_vegan', 'is_spicy', 'is_gluten_free')

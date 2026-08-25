@@ -150,6 +150,49 @@ def table_menu(request, table_number):
     return render(request, 'menu/customer_menu_fresh.html', context)
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def get_item(request, table_number):
+    """Get item details including sizes"""
+    try:
+        table = _get_customer_table(request, table_number)
+        data = json.loads(request.body)
+        menu_item_id = data.get('menu_item_id')
+
+        menu_item = get_object_or_404(MenuItem, id=menu_item_id, is_available=True)
+
+        response = {
+            'id': menu_item.id,
+            'name': menu_item.name,
+            'price': float(menu_item.price),
+            'has_sizes': menu_item.has_sizes,
+            'sizes': None
+        }
+
+        if menu_item.has_sizes:
+            response['sizes'] = {
+                'S': {
+                    'label': 'Small',
+                    'price': float(menu_item.size_small_price)
+                },
+                'M': {
+                    'label': 'Medium',
+                    'price': float(menu_item.size_medium_price)
+                },
+                'L': {
+                    'label': 'Large',
+                    'price': float(menu_item.size_large_price)
+                }
+            }
+
+        return JsonResponse(response)
+
+    except MenuItem.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
 @require_GET
 def debug_session(request, table_number):
     """Debug endpoint to check session status"""
