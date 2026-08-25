@@ -71,7 +71,9 @@ def _get_customer_table(request, table_number):
         if supplied_token == str(table.qr_access_token):
             # Valid QR code scan - create/update session
             request.session['qr_table_number'] = table.number
-            request.session['qr_session_start_time'] = timezone.now().isoformat()
+            # Only set start time if this is a new session (don't reset on each request)
+            if 'qr_session_start_time' not in request.session:
+                request.session['qr_session_start_time'] = timezone.now().isoformat()
             request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
             request.session.set_expiry(table.menu_access_timeout_minutes * 60)
         else:
