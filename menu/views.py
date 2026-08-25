@@ -586,8 +586,18 @@ def order_status(request, table_number, order_id):
 
 @require_GET
 def order_status_data(request, table_number, order_id):
-    """Return the current order state for customer-side polling."""
-    table = _get_customer_table(request, table_number)
+    """Return the current order state for customer-side polling - accessible during and after order."""
+    try:
+        # Try to validate session, but allow if order_completed (still need to poll)
+        table = _get_customer_table(request, table_number)
+    except AccessDeniedException as e:
+        # If only issue is order_completed, still allow polling the order status
+        if 'order has been completed' in str(e):
+            table = get_object_or_404(Table, number=table_number, is_active=True)
+        else:
+            # Other access issues (expired, invalid session) - deny
+            return JsonResponse({'error': str(e)}, status=403)
+
     order = get_object_or_404(Order, id=order_id, table=table)
     return JsonResponse({
         'status': order.status,
