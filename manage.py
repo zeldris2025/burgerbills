@@ -1,9 +1,4 @@
 #!/usr/bin/env python
-"""
-Burger Bills - Restaurant Menu Management System
-Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
-Proprietary and confidential. Unauthorized copying or distribution is prohibited.
-"""
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
