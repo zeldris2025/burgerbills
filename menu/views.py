@@ -34,6 +34,19 @@ class AccessDeniedException(Exception):
         self.reason = reason
 
 
+def _no_store(response):
+    """Stop the browser caching a customer page.
+
+    Without this the back button can redisplay the menu from cache after the order
+    was placed or the session expired, instead of asking the server and landing on
+    the access denied page.
+    """
+    response['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
+
+
 def handle_access_denied(view_func):
     """Decorator to handle AccessDeniedException and display access denied page or JSON error"""
     def wrapper(request, *args, **kwargs):
@@ -48,15 +61,16 @@ def handle_access_denied(view_func):
                       request.headers.get('Content-Type') == 'application/json')
 
             if is_ajax:
-                return JsonResponse({
+                response = JsonResponse({
                     'success': False,
                     'error': error_msg,
                     'message': error_msg
                 }, status=403)
             else:
-                return render(request, 'menu/access_denied.html', {
+                response = render(request, 'menu/access_denied.html', {
                     'error_message': error_msg,
                 }, status=403)
+            return _no_store(response)
     return wrapper
 
 
@@ -188,7 +202,7 @@ def table_menu(request, table_number):
             '{table_number}', str(table.number)
         ),
     }
-    return render(request, 'menu/customer_menu_fresh.html', context)
+    return _no_store(render(request, 'menu/customer_menu_fresh.html', context))
 
 
 @csrf_exempt
