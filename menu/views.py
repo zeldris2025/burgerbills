@@ -296,15 +296,13 @@ def add_to_order(request, table_number):
                 defaults={'total_amount': 0}
             )
 
-        # Check if item already in order
+        # Check if item already in order (include unit_price in lookup to distinguish size variants)
         order_item, item_created = OrderItem.objects.get_or_create(
             order=order,
             menu_item=menu_item,
+            unit_price=unit_price,
             special_requests=special_requests,
-            defaults={
-                'quantity': quantity,
-                'unit_price': unit_price
-            }
+            defaults={'quantity': quantity}
         )
 
         if not item_created:
