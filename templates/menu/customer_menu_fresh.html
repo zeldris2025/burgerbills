@@ -534,11 +534,14 @@
       })
       .then(data => {
         if (data.success) {
+          // Use unique key for each size variant (itemName includes size if applicable)
+          const cartKey = `${itemId}_${itemName}`;
+
           // Update local cart for UI purposes
-          if (!cart[itemId]) {
-            cart[itemId] = { name: itemName, price: price, quantity: 0, notes: '' };
+          if (!cart[cartKey]) {
+            cart[cartKey] = { name: itemName, price: price, quantity: 0, notes: '', itemId: itemId };
           }
-          cart[itemId].quantity += 1;
+          cart[cartKey].quantity += 1;
           updateCartUI();
           updateQuickOrderPanel();
 
@@ -563,22 +566,26 @@
       });
     }
 
-    function removeFromCart(itemId) {
-      delete cart[itemId];
+    function removeFromCart(cartKey) {
+      // Extract itemId from cartKey (format: "itemId_itemName")
+      const itemId = cart[cartKey]?.itemId;
+      delete cart[cartKey];
       updateCartUI();
 
-      // Reset button text
-      const button = document.querySelector(`[data-item-id="${itemId}"] .add-btn`);
-      if (button) {
-        button.textContent = 'Add';
-        button.style.opacity = '1';
+      // Reset button text if it exists
+      if (itemId) {
+        const button = document.querySelector(`[data-item-id="${itemId}"] .add-btn`);
+        if (button) {
+          button.textContent = 'Add';
+          button.style.opacity = '1';
+        }
       }
     }
 
-    function updateQuantity(itemId, change) {
-      cart[itemId].quantity += change;
-      if (cart[itemId].quantity <= 0) {
-        removeFromCart(itemId);
+    function updateQuantity(cartKey, change) {
+      cart[cartKey].quantity += change;
+      if (cart[cartKey].quantity <= 0) {
+        removeFromCart(cartKey);
       } else {
         updateCartUI();
       }
@@ -602,20 +609,20 @@
           </div>
         `;
       } else {
-        itemsContainer.innerHTML = Object.entries(cart).map(([id, item]) => `
+        itemsContainer.innerHTML = Object.entries(cart).map(([cartKey, item]) => `
           <div style="padding: 15px; border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 15px; background: #fafbfc;">
             <!-- Item Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <strong>${item.name}</strong>
-              <button onclick="removeFromCart(${id}); updateCartUI();" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Remove</button>
+              <button onclick="removeFromCart('${cartKey}'); updateCartUI();" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">Remove</button>
             </div>
 
             <!-- Quantity and Price -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
               <div>
-                <button onclick="updateQuantity(${id}, -1); updateCartUI();" style="background: white; border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; cursor: pointer;">-</button>
+                <button onclick="updateQuantity('${cartKey}', -1); updateCartUI();" style="background: white; border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; cursor: pointer;">-</button>
                 <span style="margin: 0 10px; font-weight: 600;">${item.quantity}</span>
-                <button onclick="updateQuantity(${id}, 1); updateCartUI();" style="background: white; border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; cursor: pointer;">+</button>
+                <button onclick="updateQuantity('${cartKey}', 1); updateCartUI();" style="background: white; border: 1px solid #d1d5db; padding: 4px 8px; border-radius: 4px; cursor: pointer;">+</button>
               </div>
               <strong style="color: #E53935;">$${(item.price * item.quantity).toFixed(2)}</strong>
             </div>
@@ -623,16 +630,16 @@
             <!-- Special Requests -->
             <div style="margin-top: 10px;">
               <label style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 5px; color: #6b7280;">Special requests (e.g., no onions)</label>
-              <textarea id="notes-${id}" placeholder="Add special instructions..." style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 60px;" onchange="updateItemNotes(${id}, this.value)">${item.notes || ''}</textarea>
+              <textarea id="notes-${cartKey}" placeholder="Add special instructions..." style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 60px;" onchange="updateItemNotes('${cartKey}', this.value)">${item.notes || ''}</textarea>
             </div>
           </div>
         `).join('');
       }
     }
 
-    function updateItemNotes(itemId, notes) {
-      if (cart[itemId]) {
-        cart[itemId].notes = notes;
+    function updateItemNotes(cartKey, notes) {
+      if (cart[cartKey]) {
+        cart[cartKey].notes = notes;
       }
     }
 
@@ -652,7 +659,7 @@
       }
 
       // First, update all items with their special requests
-      const updatePromises = Object.entries(cart).map(([id, item]) => {
+      const updatePromises = Object.entries(cart).map(([cartKey, item]) => {
         if (item.notes) {
           return fetch(`/table/${TABLE_NUMBER}/update-item-notes/`, {
             method: 'POST',
@@ -661,7 +668,7 @@
               'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
-              menu_item_id: parseInt(id),
+              menu_item_id: item.itemId,
               special_requests: item.notes
             })
           }).then(res => res.json()).catch(err => console.error('Update error:', err));
@@ -760,7 +767,7 @@
           </div>
         `;
       } else {
-        itemsContainer.innerHTML = Object.entries(cart).map(([id, item]) => `
+        itemsContainer.innerHTML = Object.entries(cart).map(([cartKey, item]) => `
           <div class="qop-item">
             <span class="qop-item-name">${item.name}</span>
             <span class="qop-item-qty">${item.quantity}</span>
