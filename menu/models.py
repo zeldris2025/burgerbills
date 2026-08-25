@@ -106,13 +106,16 @@ class MenuItem(models.Model):
         return tags
 
     def get_sizes(self):
-        """Return size options if available"""
+        """Return size options if available (only non-zero prices)"""
         if self.has_sizes:
-            return {
-                'S': {'label': 'Small', 'price': float(self.size_small_price)},
-                'M': {'label': 'Medium', 'price': float(self.size_medium_price)},
-                'L': {'label': 'Large', 'price': float(self.size_large_price)},
-            }
+            sizes = {}
+            if self.size_small_price > 0:
+                sizes['S'] = {'label': 'Small', 'price': float(self.size_small_price)}
+            if self.size_medium_price > 0:
+                sizes['M'] = {'label': 'Medium', 'price': float(self.size_medium_price)}
+            if self.size_large_price > 0:
+                sizes['L'] = {'label': 'Large', 'price': float(self.size_large_price)}
+            return sizes if sizes else None
         return None
 
 

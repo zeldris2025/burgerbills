@@ -172,20 +172,24 @@ def get_item(request, table_number):
         }
 
         if menu_item.has_sizes:
-            response['sizes'] = {
-                'S': {
+            sizes = {}
+            if menu_item.size_small_price > 0:
+                sizes['S'] = {
                     'label': 'Small',
                     'price': float(menu_item.size_small_price)
-                },
-                'M': {
+                }
+            if menu_item.size_medium_price > 0:
+                sizes['M'] = {
                     'label': 'Medium',
                     'price': float(menu_item.size_medium_price)
-                },
-                'L': {
+                }
+            if menu_item.size_large_price > 0:
+                sizes['L'] = {
                     'label': 'Large',
                     'price': float(menu_item.size_large_price)
                 }
-            }
+            response['sizes'] = sizes if sizes else None
+            response['has_sizes'] = bool(sizes)
 
         return JsonResponse(response)
 
