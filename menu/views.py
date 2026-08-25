@@ -66,6 +66,7 @@ def _get_customer_table(request, table_number):
 
     supplied_token = request.GET.get('access')
     current_session_table = request.session.get('qr_table_number')
+    order_completed = request.session.get('qr_order_completed', False)
 
     # Check if session has expired FIRST (before allowing recreation)
     session_start_str = request.session.get('qr_session_start_time')
@@ -78,22 +79,22 @@ def _get_customer_table(request, table_number):
 
         if timezone.now() > session_expiry:
             # Session has expired (hard timeout)
-            # Mark as expired instead of flushing - prevents recreation with same token
             request.session['qr_session_expired'] = True
             raise AccessDeniedException('Your menu access has expired. Please scan the QR code at your table again.')
 
-    # Reject any attempt to use access token if session already exists (even if expired)
-    if supplied_token and current_session_table:
-        raise AccessDeniedException('Session already in use. Please scan a new QR code to continue.')
+    # If order was already completed, only allow viewing confirmation (not menu access)
+    # Must rescan QR to start a new session
+    if order_completed and not supplied_token:
+        raise AccessDeniedException('Your order has been completed. Please scan the QR code again to place a new order.')
 
-    # If access token is provided (from QR code), validate and create new session
+    # If access token provided, allow creating new session (clears order_completed flag)
     if supplied_token:
         if supplied_token == str(table.qr_access_token):
             # Valid QR code scan - create new session
             request.session['qr_table_number'] = table.number
             request.session['qr_session_start_time'] = timezone.now().isoformat()
             request.session['qr_access_timeout_minutes'] = table.menu_access_timeout_minutes
-            request.session['qr_session_expired'] = False
+            request.session['qr_order_completed'] = False  # Reset order flag for new session
             request.session.set_expiry(table.menu_access_timeout_minutes * 60)
         else:
             # Invalid access token
@@ -546,9 +547,9 @@ def submit_order(request, table_number):
         order.status = 'confirmed'
         order.save()
 
-        # Flush session after order is submitted to prevent further menu access
+        # Mark session as order completed - prevents further menu access
         # Customer must rescan QR code to place another order
-        request.session.flush()
+        request.session['qr_order_completed'] = True
 
         return JsonResponse({
             'success': True,
