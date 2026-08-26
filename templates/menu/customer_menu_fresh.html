@@ -542,6 +542,8 @@
           if (!cart[cartKey]) {
             cart[cartKey] = { name: itemName, price: price, quantity: 0, notes: '', itemId: itemId };
           }
+          // Keep the server's row id so removing or re-counting this line can be sent back
+          cart[cartKey].orderItemId = data.order_item_id;
           cart[cartKey].quantity += 1;
           updateCartUI();
           updateQuickOrderPanel();
@@ -567,9 +569,39 @@
       });
     }
 
+    // Push a line's new quantity to the order on the server. Quantity 0 deletes the
+    // line. Without this the item stays on the order and reappears on the staff
+    // panel and the receipt even though the customer removed it.
+    function syncCartLine(orderItemId, quantity) {
+      if (!orderItemId) {
+        return Promise.resolve();
+      }
+      return fetch(`/table/${TABLE_NUMBER}/update/${orderItemId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ quantity: quantity })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.success) {
+          throw new Error(data.message || 'Could not update your order');
+        }
+      });
+    }
+
     function removeFromCart(cartKey) {
       // Extract itemId from cartKey (format: "itemId_itemName")
       const itemId = cart[cartKey]?.itemId;
+      const orderItemId = cart[cartKey]?.orderItemId;
+
+      syncCartLine(orderItemId, 0).catch(err => {
+        console.error('Remove error:', err);
+        showNotification('Could not remove that item. Please try again.', 'error');
+      });
+
       delete cart[cartKey];
       updateCartUI();
 
@@ -588,6 +620,10 @@
       if (cart[cartKey].quantity <= 0) {
         removeFromCart(cartKey);
       } else {
+        syncCartLine(cart[cartKey].orderItemId, cart[cartKey].quantity).catch(err => {
+          console.error('Quantity error:', err);
+          showNotification('Could not update the quantity. Please try again.', 'error');
+        });
         updateCartUI();
       }
     }

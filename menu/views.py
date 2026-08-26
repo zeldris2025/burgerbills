@@ -376,6 +376,8 @@ def add_to_order(request, table_number):
             'success': True,
             'message': f'{menu_item.name} added to order!',
             'order_id': order.id,
+            # The cart needs this to remove the row or change its quantity later.
+            'order_item_id': order_item.id,
             'total_items': sum(item.quantity for item in order.items.all()),
             'total_amount': str(order.total_amount),
         })
@@ -463,6 +465,7 @@ def current_order_items(request, table_number):
 
 
 @csrf_exempt
+@handle_access_denied
 @require_http_methods(["POST"])
 def update_order_item(request, table_number, item_id):
     """Update quantity of item in order"""
