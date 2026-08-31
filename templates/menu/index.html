@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=remove-est-2025">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=orbit-2">
 {% endblock %}
 
 {% block content %}
@@ -20,6 +20,12 @@
             <span>Burger Bills</span>
         </div>
         <p class="landing-header-note">Just can't get enough &middot; Samoa</p>
+        <nav class="landing-nav" aria-label="Burger Bills menu">
+            <a href="{% url 'index' %}" class="is-current">Home</a>
+            <a href="{% url 'about' %}">About</a>
+            <a href="{% url 'location' %}">Location</a>
+            <a href="{% url 'how_to_order' %}">Order</a>
+        </nav>
     </header>
 
     <section class="landing-hero" aria-labelledby="landing-title">
@@ -28,7 +34,19 @@
             <h1 id="landing-title">Built fresh.<br><em>Served bold.</em></h1>
             <p class="hero-lead">Stacked with honest ingredients and grilled when you order. Burger Bills is big flavor made for the table in front of us.</p>
         </div>
-        <div id="burger-scene" class="hero-scene" role="img" aria-label="Animated three-dimensional Burger Bills cheeseburger"></div>
+        <div id="hero-orbit" class="hero-orbit">
+            <div id="burger-scene" class="hero-scene" role="img" aria-label="Animated three-dimensional Burger Bills cheeseburger"></div>
+            <nav class="orbit-nav" aria-label="Burger Bills menu">
+                <div class="orbit-center">
+                    <span class="orbit-ring" aria-hidden="true"></span>
+                    <a class="orbit-link is-current" style="--angle: -90deg; --i: 0" href="{% url 'index' %}"><i class="fas fa-house" aria-hidden="true"></i>Home</a>
+                    <a class="orbit-link" style="--angle: 0deg; --i: 1" href="{% url 'about' %}"><i class="fas fa-fire" aria-hidden="true"></i>About</a>
+                    <a class="orbit-link" style="--angle: 90deg; --i: 2" href="{% url 'location' %}"><i class="fas fa-location-dot" aria-hidden="true"></i>Location</a>
+                    <a class="orbit-link" style="--angle: 180deg; --i: 3" href="{% url 'how_to_order' %}"><i class="fas fa-utensils" aria-hidden="true"></i>Order</a>
+                </div>
+                <span class="orbit-hint"><i class="fas fa-hand-pointer" aria-hidden="true"></i><span class="for-hover">Hover the burger for the menu</span><span class="for-touch">Tap the burger for the menu</span></span>
+            </nav>
+        </div>
         <span class="hero-scroll-cue" aria-hidden="true">Discover</span>
     </section>
 
@@ -101,4 +119,5 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 <script src="{% static 'js/landing.js' %}?v=20260819-5"></script>
+<script src="{% static 'js/orbit-menu.js' %}?v=2"></script>
 {% endblock %}

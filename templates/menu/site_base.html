@@ -1,0 +1,50 @@
+{% extends 'menu/base.html' %}
+{% comment %}
+Burger Bills - shared shell for the public About / Location / Order pages.
+Keeps the landing page's palette and type without the ordering navbar.
+{% endcomment %}
+{% load static %}
+
+{% block navigation %}{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=orbit-2">
+<link rel="stylesheet" href="{% static 'css/site.css' %}?v=1">
+{% block page_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="site-shell">
+    <header class="site-header">
+        <a class="landing-brand" href="{% url 'index' %}">
+            <img src="{% static 'images/logo.png' %}" alt="Burger Bills logo">
+            <span>Burger Bills</span>
+        </a>
+        <nav class="site-nav" aria-label="Burger Bills menu">
+            <a href="{% url 'index' %}"{% if active_page == 'home' %} class="is-current" aria-current="page"{% endif %}>Home</a>
+            <a href="{% url 'about' %}"{% if active_page == 'about' %} class="is-current" aria-current="page"{% endif %}>About</a>
+            <a href="{% url 'location' %}"{% if active_page == 'location' %} class="is-current" aria-current="page"{% endif %}>Location</a>
+            <a href="{% url 'how_to_order' %}"{% if active_page == 'order' %} class="is-current" aria-current="page"{% endif %}>Order</a>
+        </nav>
+    </header>
+
+    <main class="site-main">
+        <section class="page-hero">
+            <span class="section-label">{% block page_kicker %}Burger Bills{% endblock %}</span>
+            <h1>{% block page_title %}{% endblock %}</h1>
+            {% block page_intro %}{% endblock %}
+        </section>
+
+        {% block page_content %}{% endblock %}
+    </main>
+
+    <footer class="landing-footer">
+        <strong>Burger Bills</strong>
+        <span>&copy; 2026 Burger Bills, Samoa</span>
+        <span>Fresh food. Real tables. Good company.</span>
+    </footer>
+</div>
+{% endblock %}

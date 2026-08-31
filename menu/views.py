@@ -79,6 +79,53 @@ def index(request):
     return render(request, 'menu/index.html')
 
 
+def about(request):
+    """Public 'About' page reached from the hero orbit menu."""
+    return render(request, 'menu/about.html', {'active_page': 'about'})
+
+
+# Where Burger Bills is. Replace these four values with the real ones and every
+# map, pin and directions link on the Location page follows automatically.
+RESTAURANT_LOCATION = {
+    'name': 'Burger Bills',
+    'address': 'Apia, Samoa',
+    'latitude': -13.8333,
+    'longitude': -171.7667,
+}
+
+
+def location(request):
+    """Public 'Location' page with the map and directions to the restaurant.
+
+    The embedded map is OpenStreetMap: it frames without an API key, unlike the
+    keyless Google Maps embed, which now answers with X-Frame-Options: SAMEORIGIN
+    and renders as an empty box. The directions buttons still hand off to Google
+    and Apple Maps, which is where people actually want to navigate from.
+    """
+    lat = RESTAURANT_LOCATION['latitude']
+    lng = RESTAURANT_LOCATION['longitude']
+    span = 0.006  # roughly 650m of map on each side of the pin
+
+    return render(request, 'menu/location.html', {
+        'active_page': 'location',
+        'place': RESTAURANT_LOCATION,
+        'map_embed_url': (
+            'https://www.openstreetmap.org/export/embed.html'
+            f'?bbox={round(lng - span, 6)}%2C{round(lat - span, 6)}'
+            f'%2C{round(lng + span, 6)}%2C{round(lat + span, 6)}'
+            f'&layer=mapnik&marker={lat}%2C{lng}'
+        ),
+        'map_google_url': f'https://www.google.com/maps/dir/?api=1&destination={lat},{lng}',
+        'map_apple_url': f'https://maps.apple.com/?daddr={lat},{lng}',
+        'map_osm_url': f'https://www.openstreetmap.org/?mlat={lat}&mlon={lng}#map=17/{lat}/{lng}',
+    })
+
+
+def how_to_order(request):
+    """Public 'Order' page explaining how dine-in ordering works."""
+    return render(request, 'menu/how_to_order.html', {'active_page': 'order'})
+
+
 def _start_qr_session(request, table):
     """Begin a fresh menu session for a customer who just scanned the table QR code."""
     request.session['qr_table_number'] = table.number

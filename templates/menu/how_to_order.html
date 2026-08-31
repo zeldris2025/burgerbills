@@ -1,0 +1,77 @@
+{% extends 'menu/site_base.html' %}
+{% block title %}How to Order | Burger Bills{% endblock %}
+
+{% block page_kicker %}Ordering{% endblock %}
+{% block page_title %}Scan, tap,<br><em>and eat.</em>{% endblock %}
+{% block page_intro %}
+<p>Ordering at Burger Bills is done from your own phone at the table. It takes about a minute &mdash; here is exactly how it works.</p>
+{% endblock %}
+
+{% block page_content %}
+<section class="site-section">
+    <span class="section-label">Four steps</span>
+    <h2>How to order</h2>
+    <p>Ordering is available to dine-in guests only, so the first step is simply to take a seat.</p>
+
+    <ol class="step-list">
+        <li>
+            <div>
+                <h3>Take a seat</h3>
+                <p>Find any free table. Every table has its own QR code printed on the table card.</p>
+            </div>
+        </li>
+        <li>
+            <div>
+                <h3>Scan the QR code on your table</h3>
+                <p>Point your phone camera at the code and open the link. The menu opens for your table only, so your order always reaches the right seat.</p>
+            </div>
+        </li>
+        <li>
+            <div>
+                <h3>Browse the menu and build your order</h3>
+                <p>Tap an item to add it to your cart, set the quantity, and add a note if you want something left off or on the side.</p>
+            </div>
+        </li>
+        <li>
+            <div>
+                <h3>Send it to the kitchen</h3>
+                <p>Check your cart, confirm, and submit. You will see your order status update on screen while the kitchen cooks it fresh.</p>
+            </div>
+        </li>
+    </ol>
+
+    <div class="card-grid">
+        <article class="info-card">
+            <i class="fas fa-clock" aria-hidden="true"></i>
+            <h3>Your menu session</h3>
+            <p>Each scan opens the menu for a limited time. If it closes before you are finished, just scan the table code again.</p>
+        </article>
+        <article class="info-card">
+            <i class="fas fa-note-sticky" aria-hidden="true"></i>
+            <h3>Special requests</h3>
+            <p>Allergy or a change to an item? Add it to the note on the item so the kitchen sees it with your order.</p>
+        </article>
+        <article class="info-card">
+            <i class="fas fa-hand" aria-hidden="true"></i>
+            <h3>Need a hand?</h3>
+            <p>Any of our staff can walk you through the scan and place the order with you.</p>
+        </article>
+    </div>
+</section>
+
+<section class="site-section site-split">
+    <div>
+        <span class="section-label">Payment &amp; extras</span>
+        <h2>The details.</h2>
+    </div>
+    <div class="placeholder-block">
+        <strong>Placeholder &mdash; add your ordering details</strong>
+        Fill in how guests pay (at the counter, at the table, cash or card), whether there is a minimum order, how long food usually takes, and anything about refills, takeaway boxes, or large groups.
+    </div>
+</section>
+
+<section class="site-cta">
+    <h2>Your table is waiting.</h2>
+    <p>Scan the code on your table to see today&rsquo;s menu and place your order.</p>
+</section>
+{% endblock %}

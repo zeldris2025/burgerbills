@@ -1,0 +1,387 @@
+/*
+ * Burger Bills - interior public pages (About / Location / Order)
+ * Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
+ *
+ * Shares the palette and type of landing.css, which is always loaded first.
+ */
+
+.site-shell {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    background: var(--landing-paper);
+}
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 80px;
+    padding: 0 clamp(1.25rem, 5vw, 5rem);
+    background: #171310;
+    color: #fff;
+}
+
+.site-header .landing-brand {
+    color: #fff;
+    text-decoration: none;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(.9rem, 2.5vw, 2.25rem);
+}
+
+.site-nav a {
+    position: relative;
+    padding: .35rem 0;
+    color: rgba(255, 255, 255, .78);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color .25s ease;
+}
+
+.site-nav a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--landing-yellow);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .3s cubic-bezier(.2,.8,.2,1);
+}
+
+.site-nav a:hover,
+.site-nav a.is-current {
+    color: #fff;
+}
+
+.site-nav a:hover::after,
+.site-nav a.is-current::after {
+    transform: scaleX(1);
+}
+
+.page-hero {
+    position: relative;
+    padding: clamp(3.5rem, 8vw, 6.5rem) clamp(1.25rem, 5vw, 5rem);
+    overflow: hidden;
+    color: #fff;
+    background:
+        radial-gradient(circle at 82% 30%, rgba(244, 184, 62, .22), transparent 34%),
+        linear-gradient(115deg, #171310 0%, #241b15 58%, #351e14 100%);
+}
+
+.page-hero h1 {
+    max-width: 900px;
+    margin: 0;
+    color: #fff;
+    font-family: 'Rye', serif;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 400;
+    line-height: 1.02;
+}
+
+.page-hero h1 em {
+    color: var(--landing-yellow);
+    font-style: normal;
+}
+
+.page-hero p {
+    max-width: 620px;
+    margin: 1.4rem 0 0;
+    color: rgba(255, 255, 255, .72);
+    font-size: clamp(1rem, 1.4vw, 1.12rem);
+    line-height: 1.75;
+}
+
+.page-hero .section-label {
+    color: var(--landing-yellow);
+}
+
+.site-main {
+    flex: 1;
+}
+
+.site-section {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(3.25rem, 7vw, 6rem) clamp(1.25rem, 5vw, 5rem);
+}
+
+.site-section h2 {
+    margin: 0 0 1.5rem;
+    color: var(--landing-ink);
+    font-family: 'Rye', serif;
+    font-size: clamp(1.9rem, 3.4vw, 3rem);
+    font-weight: 400;
+    line-height: 1.1;
+}
+
+.site-section p {
+    max-width: 68ch;
+    color: #5f584f;
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.site-split {
+    display: grid;
+    grid-template-columns: .85fr 1.15fr;
+    gap: clamp(2rem, 6vw, 5rem);
+    align-items: start;
+}
+
+/* A dashed block marking copy the owner still has to write. */
+.placeholder-block {
+    padding: 1.5rem 1.65rem;
+    border: 1px dashed #c6bcac;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .55);
+    color: #7b7266;
+    font-size: .95rem;
+    line-height: 1.75;
+}
+
+.placeholder-block strong {
+    display: block;
+    margin-bottom: .4rem;
+    color: var(--landing-red);
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-top: 2rem;
+}
+
+.info-card {
+    padding: 1.65rem;
+    border: 1px solid #e0d7c8;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.info-card i {
+    color: var(--landing-red);
+    font-size: 1.1rem;
+}
+
+.info-card h3 {
+    margin: .9rem 0 .5rem;
+    color: var(--landing-ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.info-card p {
+    margin: 0;
+    color: #746c61;
+    font-size: .9rem;
+    line-height: 1.7;
+}
+
+/* Numbered how-to-order steps. */
+.step-list {
+    display: grid;
+    gap: 1rem;
+    margin: 2.25rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+}
+
+.step-list li {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+    padding: 1.5rem;
+    border: 1px solid #e0d7c8;
+    border-radius: 12px;
+    background: #fff;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.step-list li:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px rgba(24, 21, 18, .09);
+}
+
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    display: grid;
+    width: 56px;
+    height: 56px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--landing-yellow);
+    color: var(--landing-ink);
+    font-family: 'Rye', serif;
+    font-size: 1.1rem;
+}
+
+.step-list h3 {
+    margin: .35rem 0 .45rem;
+    color: var(--landing-ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.step-list p {
+    margin: 0;
+    color: #746c61;
+    font-size: .93rem;
+    line-height: 1.7;
+}
+
+/* Map */
+.map-panel {
+    overflow: hidden;
+    border: 1px solid #e0d7c8;
+    border-radius: 14px;
+    background: #e9e2d6;
+    box-shadow: 0 18px 44px rgba(24, 21, 18, .12);
+}
+
+.map-frame {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    min-height: 340px;
+}
+
+.map-frame iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: saturate(.92) contrast(1.02);
+}
+
+.map-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #e0d7c8;
+    background: #fff;
+}
+
+.map-button {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .7rem 1.25rem;
+    border: 1px solid var(--landing-ink);
+    border-radius: 999px;
+    color: var(--landing-ink);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color .25s ease, color .25s ease, transform .25s ease;
+}
+
+.map-button:hover {
+    background: var(--landing-ink);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.map-button.is-primary {
+    border-color: var(--landing-red);
+    background: var(--landing-red);
+    color: #fff;
+}
+
+.map-button.is-primary:hover {
+    background: #b8341d;
+    border-color: #b8341d;
+}
+
+.detail-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.detail-list li {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: .85rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #ded4c4;
+    color: #5f584f;
+    font-size: .95rem;
+    line-height: 1.65;
+}
+
+.detail-list li:first-child {
+    padding-top: 0;
+}
+
+.detail-list i {
+    margin-top: .2rem;
+    color: var(--landing-red);
+}
+
+.detail-list strong {
+    display: block;
+    color: var(--landing-ink);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.site-cta {
+    padding: clamp(3rem, 6vw, 4.5rem) clamp(1.25rem, 5vw, 5rem);
+    background: var(--landing-green);
+    color: #fff;
+    text-align: center;
+}
+
+.site-cta h2 {
+    margin: 0;
+    font-family: 'Rye', serif;
+    font-size: clamp(1.8rem, 3.6vw, 2.9rem);
+    font-weight: 400;
+}
+
+.site-cta p {
+    max-width: 620px;
+    margin: 1rem auto 0;
+    color: rgba(255, 255, 255, .76);
+    line-height: 1.75;
+}
+
+@media (max-width: 860px) {
+    .site-header {
+        height: auto;
+        flex-direction: column;
+        gap: .85rem;
+        padding-block: 1rem;
+    }
+    .site-split { grid-template-columns: 1fr; }
+    .step-list li { grid-template-columns: 44px 1fr; gap: 1rem; padding: 1.25rem; }
+    .step-list li::before { width: 44px; height: 44px; font-size: .95rem; }
+    .map-frame { min-height: 280px; }
+}

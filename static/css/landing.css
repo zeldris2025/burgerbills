@@ -63,6 +63,7 @@ body > .footer {
     font-family: 'Cheeseburger', cursive;
     font-size: 1.15rem;
     letter-spacing: 0;
+    white-space: nowrap;
 }
 
 .landing-header-note {
@@ -75,6 +76,11 @@ body > .footer {
 }
 
 .landing-hero {
+    /* Ring geometry lives here so both the burger and the hero copy can size
+       themselves from it - the copy has to clear the ring, not just the bun. */
+    --orbit-radius: clamp(140px, 15.5vw, 225px);
+    --orbit-cx: 50%;
+    --orbit-cy: 47%;
     position: relative;
     min-height: min(900px, 92vh);
     display: grid;
@@ -149,16 +155,21 @@ body > .footer {
     line-height: 1.75;
 }
 
-.hero-scene {
+.hero-orbit {
     position: absolute;
     top: 12%;
     right: clamp(1rem, 3vw, 3.5rem);
     bottom: 8%;
     width: min(55vw, 760px);
     z-index: 1;
+    animation: burger-reveal 1.2s .15s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.hero-scene {
+    position: absolute;
+    inset: 0;
     cursor: grab;
     touch-action: pan-y;
-    animation: burger-reveal 1.2s .15s cubic-bezier(.2,.8,.2,1) both;
 }
 
 .hero-scene:active {
@@ -385,21 +396,36 @@ body > .footer {
 }
 
 @media (max-width: 860px) {
-    .landing-header { height: 74px; }
+    .landing-header {
+        height: auto;
+        min-height: 74px;
+        padding-block: .85rem;
+    }
     .landing-header-note { display: none; }
     .landing-brand img { width: 46px; height: 46px; }
     .landing-hero {
-        min-height: 820px;
+        /* One column: burger with its ring on top, copy below it. The copy's
+           top margin is derived from the ring, so they can never collide. */
+        --orbit-top: 6.5rem;
+        --orbit-height: clamp(15rem, 42vw, 23rem);
+        min-height: 0;
         grid-template-columns: 1fr;
         align-items: start;
-        padding-top: 8.5rem;
+        padding-top: 5.5rem;
+        padding-bottom: 4.5rem;
     }
-    .hero-copy { max-width: 560px; }
-    .hero-scene {
-        top: 36%;
+    .hero-copy {
+        max-width: 560px;
+        margin-top: calc(
+            var(--orbit-top) + var(--orbit-height) * .47 + var(--orbit-radius) + 3rem
+        );
+    }
+    .hero-orbit {
+        top: var(--orbit-top);
         right: -12%;
-        bottom: 0;
-        width: 105%;
+        bottom: auto;
+        width: 124%;
+        height: var(--orbit-height);
     }
     .hero-scroll-cue { display: none; }
     .landing-story { grid-template-columns: 1fr; gap: 2.25rem; }
@@ -408,21 +434,7 @@ body > .footer {
 }
 
 @media (max-width: 560px) {
-    .landing-hero {
-        min-height: 900px;
-        padding-top: 5rem;
-    }
-    .hero-copy {
-        margin-top: 20rem;
-    }
-    .landing-hero h1 { font-size: clamp(3rem, 15vw, 4.6rem); }
-    .hero-scene {
-        top: 4.5rem;
-        right: -12%;
-        bottom: auto;
-        width: 124%;
-        height: 19rem;
-    }
+    .landing-hero h1 { font-size: clamp(2.6rem, 13.5vw, 4.6rem); }
     .ingredient-grid { grid-template-columns: 1fr; }
     .ingredient-item { padding: 1.25rem 0; }
     .ingredient-item + .ingredient-item { padding-left: 0; border-left: 0; border-top: 1px solid #cfc6b8; }
@@ -432,9 +444,275 @@ body > .footer {
 
 @media (prefers-reduced-motion: reduce) {
     .hero-copy,
-    .hero-scene,
+    .hero-orbit,
     .landing-ticker-track,
     .hero-scroll-cue::after {
         animation: none;
+    }
+}
+/* ---------------------------------------------------------------
+   Hero orbit menu
+   Four links that swing out from the middle of the burger and sit
+   in a ring around it while the burger is hovered (or focused).
+   --------------------------------------------------------------- */
+
+.orbit-nav {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.orbit-center {
+    position: absolute;
+    left: var(--orbit-cx, 50%);
+    top: var(--orbit-cy, 47%);
+    width: 0;
+    height: 0;
+}
+
+.orbit-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--orbit-radius) * 2);
+    height: calc(var(--orbit-radius) * 2);
+    margin: calc(var(--orbit-radius) * -1) 0 0 calc(var(--orbit-radius) * -1);
+    border: 1px dashed rgba(244, 184, 62, .38);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(.55) rotate(-25deg);
+    transition: opacity .45s ease, transform .55s cubic-bezier(.2,.8,.2,1);
+}
+
+.orbit-ring::before {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 50%;
+}
+
+.orbit-link {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .62rem 1.15rem;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 999px;
+    background: rgba(23, 19, 16, .82);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .38);
+    color: #fff;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.4);
+    transition:
+        opacity .35s ease,
+        transform .5s cubic-bezier(.22,1.2,.36,1),
+        border-color .25s ease,
+        background-color .25s ease,
+        color .25s ease;
+    transition-delay: 0s;
+}
+
+.orbit-link i {
+    color: var(--landing-yellow);
+    font-size: .85rem;
+    transition: color .25s ease;
+}
+
+.orbit-link.is-current {
+    border-color: rgba(244, 184, 62, .7);
+}
+
+/* Open state: ring fades in, links fly out to their angle on the circle.
+   The wrapper also lifts above the hero copy so the left-hand link stays legible. */
+.hero-orbit.is-open {
+    z-index: 5;
+}
+
+.hero-orbit.is-open .orbit-ring {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.hero-orbit.is-open .orbit-link {
+    pointer-events: auto;
+    opacity: 1;
+    transform:
+        translate(-50%, -50%)
+        rotate(var(--angle))
+        translateX(var(--orbit-radius))
+        rotate(calc(var(--angle) * -1));
+    transition-delay: calc(var(--i) * 60ms);
+}
+
+.orbit-link:hover,
+.orbit-link:focus-visible {
+    border-color: var(--landing-yellow);
+    background: var(--landing-yellow);
+    color: var(--landing-ink);
+    outline: none;
+}
+
+.orbit-link:hover i,
+.orbit-link:focus-visible i {
+    color: var(--landing-red);
+}
+
+.hero-orbit.is-open .orbit-link:hover,
+.hero-orbit.is-open .orbit-link:focus-visible {
+    transform:
+        translate(-50%, -50%)
+        rotate(var(--angle))
+        translateX(var(--orbit-radius))
+        rotate(calc(var(--angle) * -1))
+        scale(1.08);
+}
+
+/* Small prompt sitting under the burger while the menu is closed. */
+.orbit-hint {
+    position: absolute;
+    left: var(--orbit-cx, 50%);
+    top: calc(var(--orbit-cy, 47%) + var(--orbit-radius) + 3.4rem);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    color: rgba(255, 255, 255, .5);
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    transform: translate(-50%, -50%);
+    transition: opacity .3s ease;
+}
+
+.orbit-hint i {
+    color: var(--landing-yellow);
+}
+
+.hero-orbit.is-open .orbit-hint {
+    opacity: 0;
+}
+
+/* Header links: the orbit menu's stand-in on touch and narrow screens. */
+.landing-nav {
+    display: none;
+    align-items: center;
+    gap: clamp(.75rem, 3vw, 1.75rem);
+}
+
+.landing-nav a {
+    color: rgba(255, 255, 255, .8);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+.landing-nav a:hover,
+.landing-nav a.is-current {
+    color: var(--landing-yellow);
+}
+
+/* The hint swaps wording on devices that cannot hover. */
+.orbit-hint .for-touch { display: none; }
+
+@media (hover: none) {
+    .orbit-hint .for-hover { display: none; }
+    .orbit-hint .for-touch { display: inline; }
+    .landing-header-note { display: none; }
+}
+
+/* ---- Orbit menu: responsive sizing ----------------------------------
+   The ring stays wrapped around the burger at every width by shrinking
+   its radius and its pills together, so nothing spills off screen. */
+
+@media (max-width: 1100px) {
+    .landing-hero { --orbit-radius: clamp(122px, 15vw, 180px); }
+    .orbit-link { padding: .55rem 1rem; font-size: .7rem; }
+}
+
+@media (max-width: 860px) {
+    .landing-hero { --orbit-radius: clamp(108px, 20vw, 165px); }
+    .orbit-link {
+        gap: .4rem;
+        padding: .5rem .85rem;
+        font-size: .64rem;
+        letter-spacing: .1em;
+    }
+    .orbit-link i { font-size: .76rem; }
+    .orbit-hint {
+        top: calc(var(--orbit-cy) + var(--orbit-radius) + 2.2rem);
+        font-size: .6rem;
+    }
+}
+
+@media (max-width: 560px) {
+    .landing-hero {
+        --orbit-radius: clamp(88px, 28vw, 126px);
+        --orbit-cy: 46%;
+        /* Extra clearance so the top pill never brushes the header. */
+        --orbit-top: 8.5rem;
+    }
+    .orbit-link {
+        gap: .35rem;
+        padding: .42rem .7rem;
+        font-size: .58rem;
+        letter-spacing: .07em;
+    }
+    .orbit-link i { font-size: .68rem; }
+    .orbit-hint {
+        top: calc(var(--orbit-cy) + var(--orbit-radius) + 1.9rem);
+        font-size: .56rem;
+        letter-spacing: .1em;
+    }
+}
+
+@media (max-width: 380px) {
+    .landing-hero { --orbit-radius: clamp(78px, 26vw, 100px); }
+    .orbit-link { padding: .38rem .58rem; font-size: .54rem; }
+    .landing-brand span { font-size: 1rem; }
+    .landing-brand img { width: 40px; height: 40px; }
+}
+
+/* Landscape phones: very little height, so drop the ring back to the
+   header links and shrink the hero instead of scrolling forever. */
+@media (max-height: 560px) and (orientation: landscape) {
+    .orbit-nav { display: none; }
+    .landing-nav { display: flex; }
+    .landing-header-note { display: none; }
+    .landing-header { height: auto; min-height: 68px; padding-block: .75rem; }
+    .hero-scroll-cue { display: none; }
+    .landing-hero {
+        min-height: 0;
+        grid-template-columns: 1fr 1fr;
+        padding-top: 6.5rem;
+        padding-bottom: 3rem;
+    }
+    .hero-copy { margin-top: 0; }
+    .hero-orbit {
+        top: 4.5rem;
+        right: 0;
+        bottom: 1rem;
+        width: 48%;
+        height: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .orbit-ring,
+    .orbit-link {
+        transition-duration: .01ms;
     }
 }

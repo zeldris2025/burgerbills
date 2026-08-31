@@ -12,6 +12,9 @@ urlpatterns = [
 
     # Customer views
     path('', views.index, name='index'),
+    path('about/', views.about, name='about'),
+    path('location/', views.location, name='location'),
+    path('how-to-order/', views.how_to_order, name='how_to_order'),
     path('table/<int:table_number>/menu/', views.table_menu, name='table_menu'),
     path('table/<int:table_number>/session-time/', views.session_time, name='session_time'),
     path('table/<int:table_number>/debug-session/', views.debug_session, name='debug_session'),

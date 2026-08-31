@@ -1,0 +1,108 @@
+{% extends 'menu/site_base.html' %}
+{% block title %}Location | Burger Bills{% endblock %}
+
+{% comment %}
+Every map, pin and button here is built from RESTAURANT_LOCATION in menu/views.py.
+Change the address and coordinates there and this whole page follows.
+{% endcomment %}
+
+{% block page_kicker %}Find us{% endblock %}
+{% block page_title %}Come see us<br><em>in person.</em>{% endblock %}
+{% block page_intro %}
+<p>We are a dine-in kitchen, so the best seat in the house is the one at our table. Here is the map, the directions and everything you need to get here.</p>
+{% endblock %}
+
+{% block page_content %}
+<section class="site-section site-split">
+    <div>
+        <span class="section-label">The map</span>
+        <h2>Getting here.</h2>
+        <ul class="detail-list">
+            <li>
+                <i class="fas fa-location-dot" aria-hidden="true"></i>
+                <div>
+                    <strong>Address</strong>
+                    {{ place.address }}
+                    <em>(placeholder &mdash; add the street address)</em>
+                </div>
+            </li>
+            <li>
+                <i class="fas fa-clock" aria-hidden="true"></i>
+                <div>
+                    <strong>Opening hours</strong>
+                    Placeholder &mdash; add your days and times.
+                </div>
+            </li>
+            <li>
+                <i class="fas fa-phone" aria-hidden="true"></i>
+                <div>
+                    <strong>Phone</strong>
+                    Placeholder &mdash; add your contact number.
+                </div>
+            </li>
+            <li>
+                <i class="fas fa-car" aria-hidden="true"></i>
+                <div>
+                    <strong>Parking</strong>
+                    Placeholder &mdash; where guests can park.
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="map-panel">
+        <div class="map-frame">
+            <iframe
+                title="Map showing the location of {{ place.name }}"
+                src="{{ map_embed_url }}"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen></iframe>
+        </div>
+        <div class="map-actions">
+            <a class="map-button is-primary"
+               href="{{ map_google_url }}"
+               target="_blank" rel="noopener">
+                <i class="fas fa-diamond-turn-right" aria-hidden="true"></i> Get directions
+            </a>
+            <a class="map-button"
+               href="{{ map_apple_url }}"
+               target="_blank" rel="noopener">
+                <i class="fab fa-apple" aria-hidden="true"></i> Apple Maps
+            </a>
+            <a class="map-button"
+               href="{{ map_osm_url }}"
+               target="_blank" rel="noopener">
+                <i class="fas fa-map" aria-hidden="true"></i> Open street map
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="site-section">
+    <span class="section-label">Landmarks</span>
+    <h2>Nearly there?</h2>
+    <div class="card-grid">
+        <article class="info-card">
+            <i class="fas fa-signs-post" aria-hidden="true"></i>
+            <h3>Coming from town</h3>
+            <p>Placeholder &mdash; describe the turn-by-turn approach from the town centre.</p>
+        </article>
+        <article class="info-card">
+            <i class="fas fa-bus" aria-hidden="true"></i>
+            <h3>By bus or taxi</h3>
+            <p>Placeholder &mdash; the nearest stop, and what to tell a driver.</p>
+        </article>
+        <article class="info-card">
+            <i class="fas fa-store" aria-hidden="true"></i>
+            <h3>Look for</h3>
+            <p>Placeholder &mdash; the shopfront, sign, or landmark next door.</p>
+        </article>
+    </div>
+</section>
+
+<section class="site-cta">
+    <h2>See you at the table.</h2>
+    <p>Walk in, take a seat, and scan the QR code on your table to order.</p>
+</section>
+{% endblock %}
