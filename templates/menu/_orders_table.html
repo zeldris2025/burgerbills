@@ -1,0 +1,52 @@
+{% comment %}
+Just the orders table. Rendered inside all_orders.html on first load and again on
+its own by the all_orders_table view, which the page polls every few seconds.
+{% endcomment %}
+{% if orders %}
+    <div class="orders-table">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Table</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td class="order-number">{{ order.order_number }}</td>
+                        <td>Table {{ order.table.number }}</td>
+                        <td>
+                            <span class="status-badge status-{{ order.status }}">
+                                {% if order.status == 'pending' %}Pending
+                                {% elif order.status == 'confirmed' %}Confirmed
+                                {% elif order.status == 'preparing' %}Preparing
+                                {% elif order.status == 'ready' %}Ready
+                                {% elif order.status == 'completed' %}Completed
+                                {% else %}{{ order.status|title }}{% endif %}
+                            </span>
+                        </td>
+                        <td>{{ order.item_count }} items</td>
+                        <td class="price">${{ order.total_amount }}</td>
+                        <td>{{ order.created_at|date:"M d H:i" }}</td>
+                        <td>
+                            <a class="btn-sm btn-edit" href="{% url 'staff_order_receipt' order.id %}">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No orders found</p>
+    </div>
+{% endif %}

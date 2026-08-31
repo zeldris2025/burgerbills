@@ -36,6 +36,7 @@ urlpatterns = [
     # Admin/Cashier views
     path('dashboard/', views.dashboard, name='dashboard'),
     path('orders/', views.all_orders, name='all_orders'),
+    path('orders/table/', views.all_orders_table, name='all_orders_table'),
     path('order/<int:order_id>/update-status/', views.update_order_status, name='update_order_status'),
     path('order/<int:order_id>/call-customer/', views.call_customer, name='call_customer'),
     path('menu-management/', views.menu_management, name='menu_management'),

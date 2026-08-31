@@ -125,6 +125,38 @@
         background: #004E89;
     }
 
+    .table-refresh-note {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+        color: #888;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .refresh-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #27ae60;
+        animation: refresh-pulse 2s ease-in-out infinite;
+    }
+
+    .table-refresh-note.is-stale .refresh-dot {
+        background: #e74c3c;
+        animation: none;
+    }
+
+    @keyframes refresh-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.25; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .refresh-dot { animation: none; }
+    }
+
     .empty-state {
         text-align: center;
         padding: 3rem;
@@ -174,53 +206,18 @@
 </div>
 
 <!-- Orders Table -->
-{% if orders %}
-    <div class="orders-table">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Order #</th>
-                    <th>Table</th>
-                    <th>Status</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Time</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                    <tr>
-                        <td class="order-number">{{ order.order_number }}</td>
-                        <td>Table {{ order.table.number }}</td>
-                        <td>
-                            <span class="status-badge status-{{ order.status }}">
-                                {% if order.status == 'pending' %}Pending
-                                {% elif order.status == 'confirmed' %}Confirmed
-                                {% elif order.status == 'preparing' %}Preparing
-                                {% elif order.status == 'ready' %}Ready
-                                {% elif order.status == 'completed' %}Completed
-                                {% else %}{{ order.status|title }}{% endif %}
-                            </span>
-                        </td>
-                        <td>{{ order.items.count }} items</td>
-                        <td class="price">${{ order.total_amount }}</td>
-                        <td>{{ order.created_at|date:"M d H:i" }}</td>
-                        <td>
-                            <a class="btn-sm btn-edit" href="{% url 'staff_order_receipt' order.id %}">
-                                View
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% else %}
-    <div class="empty-state">
-        <i class="fas fa-inbox"></i>
-        <p>No orders found</p>
-    </div>
-{% endif %}
+<div class="table-refresh-note">
+    <span class="refresh-dot" aria-hidden="true"></span>
+    <span id="refresh-status" role="status" aria-live="polite">Auto-refreshing every 5 seconds</span>
+</div>
 
+<div id="orders-table-region" data-refresh-url="{% url 'all_orders_table' %}" data-status="{{ selected_status }}">
+    {% include 'menu/_orders_table.html' %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/orders-autorefresh.js' %}?v=1"></script>
 {% endblock %}

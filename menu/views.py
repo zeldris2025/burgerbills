@@ -758,6 +758,18 @@ def dashboard(request):
     return render(request, 'menu/dashboard.html', context)
 
 
+def _orders_for_status(status_filter):
+    """Orders for the all-orders table, newest first.
+
+    The item count is annotated rather than counted per row in the template: the
+    table is polled every few seconds, so one query beats one-per-order.
+    """
+    orders = Order.objects.select_related('table').annotate(item_count=Count('items'))
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+    return orders.order_by('-created_at')
+
+
 @login_required
 def all_orders(request):
     """View all orders"""
@@ -765,18 +777,29 @@ def all_orders(request):
         return redirect('index')
 
     status_filter = request.GET.get('status', '')
-    
-    if status_filter:
-        orders = Order.objects.filter(status=status_filter).order_by('-created_at')
-    else:
-        orders = Order.objects.all().order_by('-created_at')
 
     context = {
-        'orders': orders,
+        'orders': _orders_for_status(status_filter),
         'status_choices': Order.ORDER_STATUS_CHOICES,
         'selected_status': status_filter,
     }
     return render(request, 'menu/all_orders.html', context)
+
+
+@require_GET
+def all_orders_table(request):
+    """Return just the orders table, for the auto-refresh poll on /orders/.
+
+    Answers 403 rather than redirecting when the staff session has gone, so the
+    page can stop polling instead of quietly pasting a login form into the table.
+    """
+    if not request.user.is_staff:
+        return HttpResponse('Forbidden', status=403)
+
+    html = render(request, 'menu/_orders_table.html', {
+        'orders': _orders_for_status(request.GET.get('status', '')),
+    })
+    return _no_store(html)
 
 
 @login_required
