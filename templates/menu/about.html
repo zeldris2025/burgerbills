@@ -1,23 +1,23 @@
 {% extends 'menu/site_base.html' %}
 {% block title %}About | Burger Bills{% endblock %}
-
+{% load static %}
 {% block page_kicker %}Our story{% endblock %}
 {% block page_title %}A small kitchen<br><em>with big flavor.</em>{% endblock %}
 {% block page_intro %}
-<p>Burger Bills is a dine-in burger house built around fresh ingredients, a hot grill, and a crew that cares about every plate that leaves the pass.</p>
+<p>Burger Bills is a fast food restaurant dedicated to serving delicious food and great service for our customers.</p>
 {% endblock %}
 
 {% block page_content %}
 <section class="site-section site-split">
     <div>
         <span class="section-label">Who we are</span>
-        <h2>Built fresh,<br>served bold.</h2>
+        <h2>Just can't,<br>get enough.</h2>
     </div>
     <div>
-        <div class="placeholder-block">
-            <strong>Placeholder &mdash; your story goes here</strong>
+        {% comment %} <div class="placeholder-block">
+            <strong>OUR STORY</strong>
             Tell guests how Burger Bills started, who is behind the grill, and what makes the food worth the trip. Two or three short paragraphs work best.
-        </div>
+        </div> {% endcomment %}
 
         <div class="card-grid">
             <article class="info-card">
@@ -45,8 +45,8 @@
         <h2>The people<br>behind the pass.</h2>
     </div>
     <div class="placeholder-block">
-        <strong>Placeholder &mdash; team &amp; milestones</strong>
-        Add the owner and crew, the year Burger Bills opened, and anything else worth bragging about. Photos can go here later too.
+        <img src="{% static 'images/team.png' %}" alt="Burger Bills team member standing in the restaurant kitchen and looking toward the camera with a welcoming expression; the dining area and kitchen surround them, creating a warm, inviting atmosphere" class="team-photo" width="100%" height="auto">
+        
     </div>
 </section>
 

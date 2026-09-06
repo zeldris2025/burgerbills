@@ -89,8 +89,9 @@ def about(request):
 RESTAURANT_LOCATION = {
     'name': 'Burger Bills',
     'address': 'Apia, Samoa',
-    'latitude': -13.8333,
-    'longitude': -171.7667,
+    'latitude': -13.821367013852514,
+    'longitude': -171.80282614658333,
+    
 }
 
 

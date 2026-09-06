@@ -1,15 +1,14 @@
 {% extends 'menu/base.html' %}
 
 {% load static %}
-{% block title %}Burger Bills | Built Fresh. Served Bold.{% endblock %}
-
+{% block title %}Burger Bills | Just can't get enough{% endblock %}
 {% block navigation %}{% endblock %}
 
 {% block extra_css %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=orbit-2">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=social-1">
 {% endblock %}
 
 {% block content %}
@@ -33,6 +32,11 @@
             <p class="hero-kicker">Made fresh. No shortcuts.</p>
             <h1 id="landing-title">Built fresh.<br><em>Served bold.</em></h1>
             <p class="hero-lead">Stacked with honest ingredients and grilled when you order. Burger Bills is big flavor made for the table in front of us.</p>
+            <ul class="hero-social" aria-label="Burger Bills on social media">
+                <li><a href="https://www.facebook.com/p/Burger-Bills-Restaurant-100088569367763/" target="_blank" rel="noopener"><i class="fab fa-facebook-f" aria-hidden="true"></i><span class="sr-only">Facebook</span></a></li>
+                <li><a href="https://www.instagram.com/burgerbillsrestaurantsamoa/?hl=en" target="_blank" rel="noopener"><i class="fab fa-instagram" aria-hidden="true"></i><span class="sr-only">Instagram</span></a></li>
+                <li><a href="https://www.tiktok.com/@burgerbillsrestaurant" target="_blank" rel="noopener"><i class="fab fa-tiktok" aria-hidden="true"></i><span class="sr-only">TikTok</span></a></li>
+            </ul>
         </div>
         <div id="hero-orbit" class="hero-orbit">
             <div id="burger-scene" class="hero-scene" role="img" aria-label="Animated three-dimensional Burger Bills cheeseburger"></div>

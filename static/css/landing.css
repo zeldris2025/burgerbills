@@ -155,6 +155,66 @@ body > .footer {
     line-height: 1.75;
 }
 
+.hero-social {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+    margin: 1.9rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hero-social li {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+.hero-social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .05);
+    color: rgba(255, 255, 255, .82);
+    font-size: 1rem;
+    line-height: 1;
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+    transition: color .25s ease, border-color .25s ease, background .25s ease, transform .25s ease, box-shadow .25s ease;
+}
+
+.hero-social a:hover,
+.hero-social a:focus-visible {
+    background: var(--landing-yellow);
+    border-color: var(--landing-yellow);
+    color: #1a1206;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(244, 184, 62, .28);
+}
+
+.hero-social a:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .hero-orbit {
     position: absolute;
     top: 12%;
