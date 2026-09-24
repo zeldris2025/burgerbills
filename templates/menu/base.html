@@ -109,6 +109,25 @@
             line-height: 1;
         }
 
+        /* The centered tagline overlaps the expanded nav links; the brand already shows it. */
+        @media (min-width: 992px) {
+            .navbar .container-fluid:has(.navbar-nav .nav-item) .restaurant-navbar-heading:not(.table-number-badge) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .restaurant-navbar-heading:not(.table-number-badge) {
+                display: none;
+            }
+        }
+
+        @media (min-width: 992px) and (max-width: 1199.98px) {
+            .nav-link {
+                margin-left: 1rem;
+            }
+        }
+
         .navbar-brand i {
             margin-right: 0.5rem;
             color: var(--accent-color);
@@ -118,6 +137,7 @@
             color: white !important;
             font-weight: 500;
             margin-left: 2rem;
+            white-space: nowrap;
             transition: all 0.3s ease;
         }
 
@@ -313,7 +333,7 @@
                 <img src="{% static 'images/logo.png' %}" alt="Burger Bills Logo" class="navbar-logo">
                 <span class="navbar-brand-copy">
                     <strong>Burger Bills</strong>
-                    <small>Service Delicious Food</small>
+                    <small>Just can't get enough</small>
                 </span>
             </a>
             <div class="restaurant-navbar-heading{% if table %} table-number-badge{% endif %}"{% if table %} aria-label="Table {{ table.number }}"{% endif %}>

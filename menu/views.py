@@ -10,10 +10,12 @@ from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.db.models import Q, Sum, Count, Prefetch
+from django.db.models import F, Q, Sum, Count, Prefetch
 from decimal import Decimal
+import csv
 import json
 from datetime import datetime
+from urllib.parse import urlencode
 
 from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
 
@@ -932,6 +934,18 @@ def staff_logout(request):
     return redirect('staff_login')
 
 
+def _active_order_signature():
+    """Fingerprint of the live order board, shared by the panel and its poller.
+
+    Any arrival, status change or completion moves it and nothing else does, so
+    the staff panel can hold still instead of reloading on a blind timer.
+    """
+    active = Order.objects.filter(
+        status__in=['confirmed', 'preparing', 'ready']
+    ).order_by('id').values_list('id', 'status')
+    return '|'.join(f'{order_id}:{status}' for order_id, status in active)
+
+
 @login_required(login_url='staff_login')
 def staff_panel(request):
     """Main staff panel for managing orders"""
@@ -967,8 +981,221 @@ def staff_panel(request):
         'total_preparing': preparing_orders.count(),
         'total_ready': ready_orders.count(),
         'staff_marquee': MarqueeSettings.load().staff_message,
+        'order_signature': _active_order_signature(),
     }
     return render(request, 'menu/staff_panel.html', context)
+
+
+@login_required(login_url='staff_login')
+@require_GET
+def staff_new_orders(request):
+    """Feed the staff panel the orders that are waiting to be picked up.
+
+    The panel polls this so it can raise the new-order alarm the moment a
+    customer submits, and only reload the page when the board actually changed.
+    """
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+    new_orders = [
+        {
+            'id': order.id,
+            'order_number': order.order_number,
+            'table': order.table.number if order.table else None,
+            'total': str(order.total_amount),
+            'created_at': order.created_at.isoformat(),
+        }
+        for order in Order.objects.filter(status='confirmed').select_related('table').order_by('-created_at')
+    ]
+
+    return JsonResponse({
+        'success': True,
+        'new_orders': new_orders,
+        'signature': _active_order_signature(),
+    })
+
+
+# Orders still in 'pending' are open carts that were never sent to the kitchen,
+# so every report leaves them out.
+REPORT_STATUSES = ['confirmed', 'preparing', 'ready', 'completed', 'cancelled']
+
+
+def _report_range(request):
+    """Read the ?start=&end= dates (YYYY-MM-DD), defaulting to today.
+
+    Returns (start, end) as dates, swapped if given the wrong way round.
+    """
+    today = timezone.localdate()
+
+    def parse(value):
+        try:
+            return datetime.strptime(value, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            return None
+
+    start = parse(request.GET.get('start')) or today
+    end = parse(request.GET.get('end')) or start
+    if start > end:
+        start, end = end, start
+    return start, end
+
+
+def _report_orders(request):
+    """Orders placed in the requested range, optionally narrowed to one status."""
+    start, end = _report_range(request)
+    orders = Order.objects.filter(
+        status__in=REPORT_STATUSES,
+        created_at__date__gte=start,
+        created_at__date__lte=end,
+    )
+    status = request.GET.get('status')
+    if status in REPORT_STATUSES:
+        orders = orders.filter(status=status)
+    else:
+        status = ''
+    return orders, start, end, status
+
+
+def _csv_safe(value):
+    """Stop spreadsheet apps running customer-typed text as a formula."""
+    text = '' if value is None else str(value)
+    if text[:1] in ('=', '+', '-', '@', '\t', '\r'):
+        return "'" + text
+    return text
+
+
+@login_required(login_url='staff_login')
+def staff_reports(request):
+    """Sales report for a date range, with CSV exports."""
+    if not request.user.is_staff:
+        return redirect('staff_login')
+
+    orders, start, end, status = _report_orders(request)
+    completed = orders.filter(status='completed')
+
+    revenue = completed.aggregate(total=Sum('total_amount'))['total'] or Decimal('0')
+    completed_count = completed.count()
+
+    top_items = OrderItem.objects.filter(order__in=completed).values(
+        'menu_item__name'
+    ).annotate(
+        qty=Sum('quantity'),
+        revenue=Sum(F('quantity') * F('unit_price')),
+    ).order_by('-qty', 'menu_item__name')[:10]
+
+    hourly = {}
+    for created_at, amount in completed.values_list('created_at', 'total_amount'):
+        hour = timezone.localtime(created_at).hour
+        count, total = hourly.get(hour, (0, Decimal('0')))
+        hourly[hour] = (count + 1, total + amount)
+    best_hour_revenue = max((total for _, total in hourly.values()), default=Decimal('0'))
+    hourly_rows = [
+        {
+            'label': f'{hour:02d}:00',
+            'orders': count,
+            'revenue': total,
+            'percent': int(total / best_hour_revenue * 100) if best_hour_revenue else 0,
+        }
+        for hour, (count, total) in sorted(hourly.items())
+    ]
+
+    type_labels = dict(Order.ORDER_TYPE_CHOICES)
+    by_type = [
+        {'label': type_labels.get(row['order_type'], row['order_type']), **row}
+        for row in completed.values('order_type').annotate(
+            orders=Count('id'), revenue=Sum('total_amount')
+        ).order_by('-revenue')
+    ]
+
+    query = {'start': start.isoformat(), 'end': end.isoformat()}
+    if status:
+        query['status'] = status
+
+    context = {
+        'start': start,
+        'end': end,
+        'status': status,
+        'status_choices': [c for c in Order.ORDER_STATUS_CHOICES if c[0] in REPORT_STATUSES],
+        'total_orders': orders.count(),
+        'completed_count': completed_count,
+        'cancelled_count': orders.filter(status='cancelled').count(),
+        'revenue': revenue,
+        'average_order': (revenue / completed_count) if completed_count else Decimal('0'),
+        'items_sold': OrderItem.objects.filter(order__in=completed).aggregate(n=Sum('quantity'))['n'] or 0,
+        'top_items': top_items,
+        'hourly_rows': hourly_rows,
+        'by_type': by_type,
+        'recent_orders': orders.select_related('table').order_by('-created_at')[:25],
+        'export_query': urlencode(query),
+        'staff_marquee': MarqueeSettings.load().staff_message,
+    }
+    return render(request, 'menu/staff_reports.html', context)
+
+
+@login_required(login_url='staff_login')
+@require_GET
+def staff_reports_export(request):
+    """Download the report range as CSV: ?kind=orders (default) or ?kind=items."""
+    if not request.user.is_staff:
+        return redirect('staff_login')
+
+    orders, start, end, _ = _report_orders(request)
+    orders = orders.select_related('table').order_by('created_at')
+    kind = 'items' if request.GET.get('kind') == 'items' else 'orders'
+
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = (
+        f'attachment; filename="burgerbills-{kind}-{start.isoformat()}-to-{end.isoformat()}.csv"'
+    )
+    # Byte-order mark so Excel opens the file as UTF-8.
+    response.write('﻿')
+    writer = csv.writer(response)
+
+    def local(value):
+        return timezone.localtime(value).strftime('%Y-%m-%d %H:%M') if value else ''
+
+    if kind == 'orders':
+        writer.writerow([
+            'Order number', 'Placed', 'Completed', 'Status', 'Type', 'Table',
+            'Customer', 'Phone', 'Items', 'Total', 'Special instructions',
+        ])
+        orders = orders.annotate(item_count=Sum('items__quantity'))
+        for order in orders:
+            writer.writerow([_csv_safe(v) for v in (
+                order.order_number,
+                local(order.created_at),
+                local(order.completed_at),
+                order.get_status_display(),
+                order.get_order_type_display(),
+                order.table.number if order.table else '',
+                order.customer_name,
+                order.customer_phone,
+                order.item_count or 0,
+                order.total_amount,
+                order.special_instructions,
+            )])
+    else:
+        writer.writerow([
+            'Order number', 'Placed', 'Status', 'Table', 'Item', 'Quantity',
+            'Unit price', 'Subtotal', 'Special requests',
+        ])
+        items = OrderItem.objects.filter(order__in=orders).select_related(
+            'order', 'order__table', 'menu_item'
+        ).order_by('order__created_at', 'created_at')
+        for item in items:
+            writer.writerow([_csv_safe(v) for v in (
+                item.order.order_number,
+                local(item.order.created_at),
+                item.order.get_status_display(),
+                item.order.table.number if item.order.table else '',
+                item.menu_item.name if item.menu_item else 'Deleted menu item',
+                item.quantity,
+                item.unit_price,
+                item.get_subtotal(),
+                item.special_requests,
+            )])
+
+    return response
 
 
 @login_required(login_url='staff_login')

@@ -1,0 +1,380 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}Staff Reports - Burger Bills{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .report-header h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        color: #1f2937;
+    }
+
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .header-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        border: 1px solid #d1d5db;
+        border-radius: 5px;
+        background: #fff;
+        color: #374151;
+        font-weight: 600;
+        line-height: 1.2;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .header-btn:hover {
+        background: #f3f4f6;
+        color: #1f2937;
+    }
+
+    .header-btn.primary {
+        border-color: #E53935;
+        background: #E53935;
+        color: #fff;
+    }
+
+    .header-btn.primary:hover {
+        background: #c62828;
+        color: #fff;
+    }
+
+    .report-filter {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .report-filter label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        color: #6b7280;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .report-filter input,
+    .report-filter select {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid #d1d5db;
+        border-radius: 5px;
+        color: #1f2937;
+    }
+
+    .quick-ranges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-left: auto;
+    }
+
+    .quick-ranges a {
+        padding: 0.4rem 0.65rem;
+        border-radius: 999px;
+        background: #f3f4f6;
+        color: #374151;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .quick-ranges a:hover {
+        background: #e5e7eb;
+    }
+
+    .report-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1px;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #e5e7eb;
+    }
+
+    .report-summary div {
+        padding: 0.9rem;
+        background: #fff;
+        text-align: center;
+    }
+
+    .report-summary strong {
+        display: block;
+        color: #111827;
+        font-size: 1.5rem;
+    }
+
+    .report-summary span {
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+    .report-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .report-panel {
+        padding: 1rem 1.25rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .report-panel h2 {
+        margin: 0 0 0.75rem;
+        font-size: 1rem;
+        color: #1f2937;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }
+
+    .report-table th {
+        padding: 0.4rem 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        color: #6b7280;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: left;
+        text-transform: uppercase;
+    }
+
+    .report-table td {
+        padding: 0.45rem 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        color: #1f2937;
+    }
+
+    .report-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .hour-bar {
+        height: 8px;
+        min-width: 2px;
+        border-radius: 4px;
+        background: #E53935;
+    }
+
+    .status-pill {
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        background: #f3f4f6;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-pill.completed { background: #dcfce7; color: #166534; }
+    .status-pill.cancelled { background: #fee2e2; color: #991b1b; }
+
+    .report-empty {
+        margin: 0;
+        color: #9ca3af;
+        font-size: 0.88rem;
+    }
+
+    .table-scroll {
+        overflow-x: auto;
+    }
+
+    @media (max-width: 600px) {
+        .quick-ranges {
+            margin-left: 0;
+        }
+
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% url 'staff_reports' as reports_url %}
+{% url 'staff_reports_export' as export_url %}
+
+<div class="report-header">
+    <h1>Reports</h1>
+    <div class="header-actions">
+        <a href="{% url 'staff_panel' %}" class="header-btn"><i class="fas fa-arrow-left"></i> Back to panel</a>
+        <a href="{{ export_url }}?{{ export_query }}&kind=orders" class="header-btn primary"><i class="fas fa-file-csv"></i> Orders CSV</a>
+        <a href="{{ export_url }}?{{ export_query }}&kind=items" class="header-btn"><i class="fas fa-file-csv"></i> Items CSV</a>
+    </div>
+</div>
+
+<form method="get" class="report-filter">
+    <label>From
+        <input type="date" name="start" value="{{ start|date:'Y-m-d' }}">
+    </label>
+    <label>To
+        <input type="date" name="end" value="{{ end|date:'Y-m-d' }}">
+    </label>
+    <label>Status
+        <select name="status">
+            <option value="">All sent orders</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <button type="submit" class="header-btn primary">Apply</button>
+    <div class="quick-ranges" id="quick-ranges">
+        <a href="#" data-days="0">Today</a>
+        <a href="#" data-days="1" data-single="1">Yesterday</a>
+        <a href="#" data-days="6">Last 7 days</a>
+        <a href="#" data-days="29">Last 30 days</a>
+    </div>
+</form>
+
+<div class="report-summary">
+    <div><strong>${{ revenue|floatformat:2 }}</strong><span>Revenue (completed)</span></div>
+    <div><strong>{{ completed_count }}</strong><span>Completed orders</span></div>
+    <div><strong>${{ average_order|floatformat:2 }}</strong><span>Average order</span></div>
+    <div><strong>{{ items_sold }}</strong><span>Items sold</span></div>
+    <div><strong>{{ total_orders }}</strong><span>Orders sent</span></div>
+    <div><strong>{{ cancelled_count }}</strong><span>Cancelled</span></div>
+</div>
+
+<div class="report-grid">
+    <section class="report-panel">
+        <h2>Best sellers</h2>
+        {% if top_items %}
+            <table class="report-table">
+                <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Revenue</th></tr></thead>
+                <tbody>
+                {% for item in top_items %}
+                    <tr>
+                        <td>{{ item.menu_item__name|default:"Deleted menu item" }}</td>
+                        <td class="num">{{ item.qty }}</td>
+                        <td class="num">${{ item.revenue|floatformat:2 }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="report-empty">No completed orders in this range.</p>
+        {% endif %}
+    </section>
+
+    <section class="report-panel">
+        <h2>Sales by hour</h2>
+        {% if hourly_rows %}
+            <table class="report-table">
+                <thead><tr><th>Hour</th><th style="width:45%"></th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+                <tbody>
+                {% for row in hourly_rows %}
+                    <tr>
+                        <td>{{ row.label }}</td>
+                        <td><div class="hour-bar" style="width: {{ row.percent }}%"></div></td>
+                        <td class="num">{{ row.orders }}</td>
+                        <td class="num">${{ row.revenue|floatformat:2 }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="report-empty">No completed orders in this range.</p>
+        {% endif %}
+    </section>
+
+    <section class="report-panel">
+        <h2>By order type</h2>
+        {% if by_type %}
+            <table class="report-table">
+                <thead><tr><th>Type</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead>
+                <tbody>
+                {% for row in by_type %}
+                    <tr>
+                        <td>{{ row.label }}</td>
+                        <td class="num">{{ row.orders }}</td>
+                        <td class="num">${{ row.revenue|floatformat:2 }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="report-empty">No completed orders in this range.</p>
+        {% endif %}
+    </section>
+</div>
+
+<section class="report-panel">
+    <h2>Orders{% if total_orders > 25 %} <small class="text-muted fw-normal">(latest 25 of {{ total_orders }} &mdash; download the CSV for all)</small>{% endif %}</h2>
+    {% if recent_orders %}
+        <div class="table-scroll">
+            <table class="report-table">
+                <thead><tr><th>Order</th><th>Placed</th><th>Table</th><th>Status</th><th class="num">Total</th><th></th></tr></thead>
+                <tbody>
+                {% for order in recent_orders %}
+                    <tr>
+                        <td>{{ order.order_number }}</td>
+                        <td>{{ order.created_at|date:"M j, H:i" }}</td>
+                        <td>{% if order.table %}{{ order.table.number }}{% else %}{{ order.get_order_type_display }}{% endif %}</td>
+                        <td><span class="status-pill {{ order.status }}">{{ order.get_status_display }}</span></td>
+                        <td class="num">${{ order.total_amount|floatformat:2 }}</td>
+                        <td class="num"><a href="{% url 'staff_order_receipt' order.id %}">Receipt</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="report-empty">No orders in this range.</p>
+    {% endif %}
+</section>
+
+<script>
+    document.getElementById('quick-ranges').addEventListener('click', function (event) {
+        const link = event.target.closest('a[data-days]');
+        if (!link) return;
+        event.preventDefault();
+        const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - Number(link.dataset.days));
+        if (link.dataset.single) end.setTime(start.getTime());
+        const form = link.closest('form');
+        form.elements.start.value = iso(start);
+        form.elements.end.value = iso(end);
+        form.submit();
+    });
+</script>
+{% endblock %}

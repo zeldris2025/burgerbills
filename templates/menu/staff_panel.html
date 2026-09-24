@@ -1,9 +1,135 @@
 {% extends 'menu/base.html' %}
+{% load static %}
 
 {% block title %}Staff Panel - Burger Bills{% endblock %}
 
 {% block extra_css %}
 <style>
+    .new-order-alert {
+        position: fixed;
+        inset: 0;
+        z-index: 20000;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background: rgba(10, 12, 20, .78);
+        backdrop-filter: blur(4px);
+        animation: new-order-fade .2s ease both;
+    }
+
+    .new-order-alert[hidden] { display: none; }
+
+    body.has-order-alarm { overflow: hidden; }
+
+    .new-order-alert-box {
+        width: min(520px, 100%);
+        padding: 2.25rem 2rem 2rem;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 28px 70px rgba(0, 0, 0, .45);
+        text-align: center;
+        animation: new-order-pop .32s cubic-bezier(.2,.9,.3,1.2) both;
+    }
+
+    .new-order-alert-icon {
+        width: 74px;
+        height: 74px;
+        margin: 0 auto 1.1rem;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: #E53935;
+        color: #fff;
+        font-size: 2rem;
+        animation: new-order-ring 1s ease-in-out infinite;
+    }
+
+    .new-order-alert-box h2 {
+        margin: 0;
+        color: #1A1A1A;
+        font-size: 1.8rem;
+        font-weight: 800;
+    }
+
+    .new-order-alert-sub {
+        margin: .35rem 0 1.25rem;
+        color: #666;
+    }
+
+    .new-order-alert-list {
+        margin: 0 0 1.5rem;
+        padding: 0;
+        list-style: none;
+        max-height: 40vh;
+        overflow-y: auto;
+        text-align: left;
+    }
+
+    .new-order-alert-list li {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .75rem 1rem;
+        border-radius: 10px;
+        background: #f6f7f9;
+        margin-bottom: .5rem;
+    }
+
+    .new-order-alert-table {
+        font-weight: 700;
+        color: #004E89;
+    }
+
+    .new-order-alert-number {
+        flex: 1;
+        color: #666;
+        font-size: .9rem;
+    }
+
+    .new-order-alert-total {
+        font-weight: 700;
+        color: #1A1A1A;
+    }
+
+    .new-order-alert-ok {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        background: #27ae60;
+        color: #fff;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        cursor: pointer;
+        transition: background .2s ease, transform .2s ease;
+    }
+
+    .new-order-alert-ok:hover { background: #219150; transform: translateY(-1px); }
+
+    .new-order-sound-hint {
+        margin-top: .9rem;
+        padding: .6rem .9rem;
+        border: 1px solid #f0c36d;
+        border-radius: 10px;
+        background: #fff8e6;
+        color: #8a6116;
+        font-size: .88rem;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    @keyframes new-order-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes new-order-pop { from { opacity: 0; transform: scale(.9) translateY(12px); } to { opacity: 1; transform: none; } }
+    @keyframes new-order-ring {
+        0%, 100% { transform: rotate(0); }
+        20% { transform: rotate(-14deg); }
+        40% { transform: rotate(12deg); }
+        60% { transform: rotate(-8deg); }
+        80% { transform: rotate(6deg); }
+    }
+
     .staff-header {
         background: linear-gradient(135deg, #004E89 0%, #E53935 100%);
         color: white;
@@ -295,6 +421,12 @@
     }
 
     .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-decoration: none;
         padding: 0.5rem 0.8rem;
         border: 1px solid #d1d5db;
         background: #fff;
@@ -304,6 +436,13 @@
     .logout-btn:hover {
         background: #f3f4f6;
         transform: none;
+    }
+
+    .staff-header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .staff-summary {
@@ -502,15 +641,42 @@
 
 {% block content %}
 {% csrf_token %}
+<div id="staff-order-feed"
+     data-feed-url="{% url 'staff_new_orders' %}"
+     data-signature="{{ order_signature }}"
+     hidden></div>
+
+<div id="new-order-alert" class="new-order-alert" role="alertdialog" aria-modal="true"
+     aria-labelledby="new-order-alert-count" hidden>
+    <div class="new-order-alert-box">
+        <div class="new-order-alert-icon"><i class="fas fa-bell"></i></div>
+        <h2 id="new-order-alert-count">New order</h2>
+        <p class="new-order-alert-sub">A customer just sent an order to the kitchen.</p>
+        <ul id="new-order-alert-list" class="new-order-alert-list"></ul>
+        <button type="button" id="new-order-alert-ok" class="new-order-alert-ok">OK</button>
+        <button type="button" id="new-order-sound-hint" class="new-order-sound-hint" hidden>
+            <i class="fas fa-volume-xmark"></i> Sound is blocked - click here to turn the alarm on
+        </button>
+    </div>
+</div>
+
 <div class="staff-header">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h1><i class="fas fa-store"></i> Staff Panel</h1>
             <p class="mb-0">Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong></p>
         </div>
-        <a href="{% url 'staff_logout' %}" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+        <div class="staff-header-actions">
+            <a href="{% url 'staff_reports' %}" class="logout-btn">
+                <i class="fas fa-chart-bar"></i> Reports
+            </a>
+            <a href="{% url 'staff_reports_export' %}?kind=orders" class="logout-btn">
+                <i class="fas fa-file-csv"></i> Today's CSV
+            </a>
+            <a href="{% url 'staff_logout' %}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
     </div>
 </div>
 
@@ -790,7 +956,6 @@
         }, 3000);
     }
 
-    // Auto-refresh every 5 seconds
-    setTimeout(() => location.reload(), 5000);
 </script>
+<script src="{% static 'js/staff-new-order-alert.js' %}?v=1"></script>
 {% endblock %}

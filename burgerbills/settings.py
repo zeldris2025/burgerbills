@@ -38,7 +38,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         'ALLOWED_HOSTS',
-        'localhost,127.0.0.1,burgerbills.ws,www.burgerbills.ws,.azurewebsites.net',
+        'localhost,127.0.0.1,burgerbills.ws,www.burgerbills.ws,.azurewebsites.net,192.168.1.227',
     ).split(',')
     if host.strip()
 ]
