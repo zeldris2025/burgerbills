@@ -1,0 +1,6 @@
+{% with sizes=item.get_sizes %}
+<span class="price-burst{% if sizes %} has-sizes{% endif %}">
+    {% if sizes %}<small>from</small>{% endif %}
+    <span class="price-burst-amount"><sup>$</sup>{{ item.price|floatformat:"-2" }}</span>
+</span>
+{% endwith %}

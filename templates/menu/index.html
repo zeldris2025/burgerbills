@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=social-1">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=menu-3">
 {% endblock %}
 
 {% block content %}
@@ -75,6 +75,88 @@
         </div>
     </div>
 
+    {% if menu_sections %}
+    <section class="landing-menu" id="menu" aria-labelledby="menu-heading" data-landing-menu>
+        <span class="menu-watermark" aria-hidden="true">Menu</span>
+        <div class="menu-head">
+            <div>
+                <span class="section-label">On the menu</span>
+                <h2 id="menu-heading">Hot deals.<br><em>Big combos.</em></h2>
+            </div>
+            <p class="menu-intro">Straight from our kitchen board &mdash; the deals, combo boxes and meals everyone keeps coming back for.</p>
+        </div>
+
+        <div class="menu-tabs" role="tablist" aria-label="Menu sections" hidden>
+            {% for section in menu_sections %}
+            <button type="button" class="menu-tab" role="tab" id="menu-tab-{{ section.key }}" aria-controls="menu-panel-{{ section.key }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"{% if not forloop.first %} tabindex="-1"{% endif %}>
+                <i class="fas {{ section.icon }}" aria-hidden="true"></i>
+                {{ section.label }}
+                <span class="menu-tab-count">{{ section.items|length }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        {% for section in menu_sections %}
+        <div class="menu-panel menu-panel--{{ section.key }}" id="menu-panel-{{ section.key }}" role="tabpanel" aria-labelledby="menu-tab-{{ section.key }}" tabindex="0">
+            <h3 class="menu-panel-title"><i class="fas {{ section.icon }}" aria-hidden="true"></i> {{ section.label }}</h3>
+            {% if section.key == 'hot-deals' %}
+            <div class="deal-grid">
+                {% for item in section.items %}
+                <article class="deal-card" style="--i: {{ forloop.counter0 }}">
+                    <span class="deal-flag"><i class="fas fa-fire" aria-hidden="true"></i> Hot deal</span>
+                    <div class="deal-media">
+                        {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">
+                        {% else %}
+                        <img class="is-placeholder" src="{% static 'images/logo.png' %}" alt="" loading="lazy">
+                        {% endif %}
+                    </div>
+                    <div class="deal-body">
+                        <div>
+                            <h4>{{ item.name }}</h4>
+                            <p>{{ item.description }}</p>
+                        </div>
+                        {% include 'menu/_landing_price.html' %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="menu-grid">
+                {% for item in section.items %}
+                {% with sizes=item.get_sizes %}
+                <article class="menu-card" style="--i: {{ forloop.counter0 }}">
+                    <div class="menu-card-media"{% if item.image %} style="--img: url('{{ item.image.url }}')"{% endif %}>
+                        {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">
+                        {% else %}
+                        <img class="is-placeholder" src="{% static 'images/logo.png' %}" alt="" loading="lazy">
+                        {% endif %}
+                    </div>
+                    {% include 'menu/_landing_price.html' %}
+                    <div class="menu-card-body">
+                        <h4>{{ item.name }}</h4>
+                        <p>{{ item.description }}</p>
+                        {% if sizes %}
+                        <ul class="menu-sizes" aria-label="Sizes">
+                            {% for code, size in sizes.items %}
+                            <li><abbr title="{{ size.label }}">{{ code }}</abbr> ${{ size.price|floatformat:"-2" }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endwith %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <p class="menu-note"><i class="fas fa-qrcode" aria-hidden="true"></i> Hungry? Grab a table and scan its QR code to order any of these.</p>
+    </section>
+    {% endif %}
+
     <section class="landing-story" aria-labelledby="story-heading">
         <div>
             <span class="section-label">The Burger Bills way</span>
@@ -124,4 +206,5 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
 <script src="{% static 'js/landing.js' %}?v=20260819-5"></script>
 <script src="{% static 'js/orbit-menu.js' %}?v=2"></script>
+<script src="{% static 'js/landing-menu.js' %}?v=1"></script>
 {% endblock %}

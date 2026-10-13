@@ -776,3 +776,579 @@ body > .footer {
         transition-duration: .01ms;
     }
 }
+
+/* ---------------------------------------------------------------
+   Menu showcase
+   Hot deals, combos and meals pulled live from the staff panel's
+   categories, shown in tabs right under the hero.
+   --------------------------------------------------------------- */
+
+.landing-menu {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(4.5rem, 9vw, 8rem) clamp(1.25rem, 5vw, 5rem);
+    background:
+        radial-gradient(circle at 12% 8%, rgba(216, 66, 40, .32), transparent 34%),
+        radial-gradient(circle at 92% 96%, rgba(244, 184, 62, .18), transparent 30%),
+        linear-gradient(180deg, #1b1511 0%, #241a14 100%);
+    color: #fff;
+}
+
+.landing-menu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: .5;
+    background-image: radial-gradient(rgba(255, 255, 255, .07) 1px, transparent 1.5px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+
+.menu-watermark {
+    position: absolute;
+    top: clamp(1rem, 4vw, 3rem);
+    right: -1.5rem;
+    z-index: -1;
+    color: transparent;
+    font-family: 'Rye', serif;
+    font-size: clamp(6rem, 20vw, 17rem);
+    line-height: 1;
+    -webkit-text-stroke: 1px rgba(244, 184, 62, .14);
+    pointer-events: none;
+    user-select: none;
+}
+
+.menu-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+    max-width: 1280px;
+    margin: 0 auto 2.5rem;
+}
+
+.landing-menu .section-label {
+    color: var(--landing-yellow);
+}
+
+.menu-head h2 {
+    margin: 0;
+    color: #fff;
+    font-family: 'Rye', serif;
+    font-size: clamp(2.25rem, 4.5vw, 4.4rem);
+    font-weight: 400;
+    line-height: 1.08;
+}
+
+.menu-head h2 em {
+    color: var(--landing-yellow);
+    font-style: normal;
+}
+
+.menu-intro {
+    max-width: 380px;
+    margin: 0;
+    color: rgba(255, 255, 255, .66);
+    line-height: 1.7;
+}
+
+/* Tabs */
+.menu-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    max-width: 1280px;
+    margin: 0 auto 2.25rem;
+}
+
+.menu-tabs[hidden] {
+    display: none;
+}
+
+.menu-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .72rem 1.15rem;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .04);
+    color: rgba(255, 255, 255, .82);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .25s ease, border-color .25s ease, color .25s ease, transform .25s ease;
+}
+
+.menu-tab i {
+    color: var(--landing-yellow);
+    transition: color .25s ease;
+}
+
+.menu-tab:hover {
+    border-color: rgba(244, 184, 62, .6);
+    transform: translateY(-2px);
+}
+
+.menu-tab:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+.menu-tab[aria-selected="true"] {
+    border-color: var(--landing-yellow);
+    background: var(--landing-yellow);
+    color: var(--landing-ink);
+}
+
+.menu-tab[aria-selected="true"] i {
+    color: var(--landing-red);
+}
+
+.menu-tab-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.45rem;
+    height: 1.45rem;
+    padding: 0 .35rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    font-size: .68rem;
+    letter-spacing: 0;
+}
+
+.menu-tab[aria-selected="true"] .menu-tab-count {
+    background: var(--landing-ink);
+    color: var(--landing-yellow);
+}
+
+/* Panels: stacked with titles until the tab script takes over. */
+.menu-panel {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.menu-panel + .menu-panel {
+    margin-top: 3.5rem;
+}
+
+.menu-panel:focus-visible {
+    outline: 2px dashed rgba(244, 184, 62, .5);
+    outline-offset: 10px;
+}
+
+.menu-panel-title {
+    margin: 0 0 1.25rem;
+    color: #fff;
+    font-family: 'Rye', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+}
+
+.menu-panel-title i {
+    color: var(--landing-yellow);
+}
+
+.landing-menu.is-tabbed .menu-panel + .menu-panel {
+    margin-top: 0;
+}
+
+.landing-menu.is-tabbed .menu-panel-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* Price sticker: a yellow starburst slapped onto the corner of each card. */
+.price-burst {
+    position: relative;
+    z-index: 2;
+    flex: none;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    width: 5.6rem;
+    aspect-ratio: 1;
+    color: var(--landing-ink);
+    text-align: center;
+    transform: rotate(-10deg);
+    transition: transform .4s cubic-bezier(.22, 1.4, .36, 1);
+}
+
+.price-burst::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--landing-yellow);
+    clip-path: polygon(
+        50% 0%, 59% 11%, 72% 4%, 76% 18%, 90% 15%, 87% 29%, 100% 33%, 92% 45%,
+        100% 57%, 88% 63%, 93% 77%, 78% 78%, 76% 93%, 62% 88%, 50% 100%, 38% 88%,
+        24% 93%, 22% 78%, 7% 77%, 12% 63%, 0% 57%, 8% 45%, 0% 33%, 13% 29%,
+        10% 15%, 24% 18%, 28% 4%, 41% 11%
+    );
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .35));
+}
+
+.price-burst small {
+    margin-bottom: -.15rem;
+    font-size: .58rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.price-burst-amount {
+    font-family: 'Rye', serif;
+    font-size: 1.35rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.price-burst-amount sup {
+    top: -.45em;
+    margin-right: .05em;
+    font-size: .55em;
+}
+
+/* Hot deals: wide banner cards with a slowly spinning ember border. */
+@property --deal-spin {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+.deal-grid {
+    display: grid;
+    padding-top: .9rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+    gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.deal-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 3px;
+    border-radius: 22px;
+    background:
+        conic-gradient(from var(--deal-spin), var(--landing-red), var(--landing-yellow), #ff7b39, var(--landing-red));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .45), 0 0 50px rgba(216, 66, 40, .25);
+    animation: deal-spin 6s linear infinite;
+    transition: transform .4s cubic-bezier(.2, .8, .2, 1);
+}
+
+.deal-card:hover {
+    transform: translateY(-6px);
+}
+
+.deal-card:hover .price-burst,
+.menu-card:hover .price-burst {
+    transform: rotate(6deg) scale(1.08);
+}
+
+/* Sits on the card's top edge so it never covers text printed in the banner. */
+.deal-flag {
+    position: absolute;
+    top: -.9rem;
+    left: 1.25rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .42rem .8rem;
+    border-radius: 999px;
+    background: var(--landing-red);
+    color: #fff;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+}
+
+.deal-flag i {
+    color: var(--landing-yellow);
+    animation: deal-flicker 1.4s ease-in-out infinite;
+}
+
+.deal-media {
+    overflow: hidden;
+    aspect-ratio: 11 / 4;
+    border-radius: 19px 19px 0 0;
+    background: #2b1a12;
+}
+
+.deal-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .6s cubic-bezier(.2, .8, .2, 1);
+}
+
+.deal-card:hover .deal-media img {
+    transform: scale(1.04);
+}
+
+.deal-body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem 1.15rem 1.5rem;
+    border-radius: 0 0 19px 19px;
+    background: var(--landing-paper);
+    color: var(--landing-ink);
+}
+
+.deal-body h4 {
+    margin: 0 0 .3rem;
+    font-family: 'Rye', serif;
+    font-size: clamp(1.2rem, 2vw, 1.5rem);
+    font-weight: 400;
+}
+
+.deal-body p {
+    margin: 0;
+    color: #6d655a;
+    font-size: .9rem;
+    line-height: 1.55;
+}
+
+.deal-body .price-burst {
+    margin: -2.6rem 0 -.5rem;
+    width: 6.4rem;
+}
+
+.deal-body .price-burst-amount {
+    font-size: 1.6rem;
+}
+
+/* Combos and meals */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+    gap: clamp(1rem, 2.4vw, 1.6rem);
+}
+
+.menu-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 18px;
+    background: var(--landing-paper);
+    color: var(--landing-ink);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .35);
+    transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s ease;
+}
+
+.menu-card:hover {
+    transform: translateY(-6px) rotate(-.4deg);
+    box-shadow: 0 26px 54px rgba(0, 0, 0, .5);
+}
+
+/* Photos come in every shape, so show each one whole over a blurred,
+   enlarged copy of itself instead of cropping the food out. */
+.menu-card-media {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    background: #2b1a12;
+}
+
+.menu-card-media::before {
+    content: '';
+    position: absolute;
+    inset: -12%;
+    background: var(--img, none) center / cover no-repeat;
+    filter: blur(18px) saturate(1.2);
+    opacity: .85;
+}
+
+.menu-card-media img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform .5s cubic-bezier(.2, .8, .2, 1);
+}
+
+.menu-card:hover .menu-card-media img {
+    transform: scale(1.06);
+}
+
+.deal-media img.is-placeholder,
+.menu-card-media img.is-placeholder {
+    object-fit: contain;
+    padding: 18%;
+    opacity: .7;
+}
+
+.menu-card > .price-burst {
+    position: absolute;
+    top: .7rem;
+    right: .7rem;
+    width: 5rem;
+}
+
+.menu-card > .price-burst .price-burst-amount {
+    font-size: 1.15rem;
+}
+
+.menu-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1rem 1.15rem 1.2rem;
+    border-top: 3px solid var(--landing-red);
+}
+
+.menu-card-body h4 {
+    margin: 0 0 .3rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.menu-card-body p {
+    margin: 0;
+    color: #6d655a;
+    font-size: .86rem;
+    line-height: 1.5;
+}
+
+.menu-sizes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin: auto 0 0;
+    padding: .85rem 0 0;
+    list-style: none;
+}
+
+.menu-sizes li {
+    padding: .28rem .6rem;
+    border: 1px solid #d9cfbf;
+    border-radius: 999px;
+    color: #4a433b;
+    font-size: .74rem;
+    font-weight: 600;
+}
+
+.menu-sizes abbr {
+    color: var(--landing-red);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.menu-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .6rem;
+    max-width: 1280px;
+    margin: 3rem auto 0;
+    color: rgba(255, 255, 255, .62);
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.menu-note i {
+    color: var(--landing-yellow);
+    font-size: 1rem;
+}
+
+/* Cards pop in as their tab opens or scrolls into view (script-driven). */
+.landing-menu.is-tabbed .menu-panel.is-revealed .menu-card {
+    animation: menu-card-in .6s cubic-bezier(.2, .8, .2, 1) backwards;
+    animation-delay: calc(min(var(--i), 8) * 55ms);
+}
+
+/* Deal cards keep their spinning border running alongside the pop-in. */
+.landing-menu.is-tabbed .menu-panel.is-revealed .deal-card {
+    animation:
+        menu-card-in .6s cubic-bezier(.2, .8, .2, 1) backwards,
+        deal-spin 6s linear infinite;
+    animation-delay: calc(var(--i) * 90ms), 0s;
+}
+
+.landing-menu.is-tabbed .menu-panel:not(.is-revealed) .deal-card,
+.landing-menu.is-tabbed .menu-panel:not(.is-revealed) .menu-card {
+    opacity: 0;
+}
+
+@keyframes menu-card-in {
+    from { opacity: 0; transform: translateY(28px) scale(.97); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes deal-spin {
+    to { --deal-spin: 360deg; }
+}
+
+@keyframes deal-flicker {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.18) rotate(-6deg); }
+}
+
+@media (max-width: 560px) {
+    /* Three equal tiles so all tabs fit on one row on phones. */
+    .menu-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+    .menu-tabs[hidden] { display: none; }
+    .menu-tab {
+        position: relative;
+        flex-direction: column;
+        gap: .35rem;
+        padding: .8rem .4rem .7rem;
+        border-radius: 14px;
+        font-size: .64rem;
+        letter-spacing: .08em;
+    }
+    .menu-tab i { font-size: .95rem; }
+    .menu-tab-count {
+        position: absolute;
+        top: -.45rem;
+        right: -.3rem;
+        min-width: 1.3rem;
+        height: 1.3rem;
+        background: var(--landing-red);
+        color: #fff;
+    }
+    .deal-body { padding: 1rem; }
+    .deal-body .price-burst { width: 5.4rem; margin-top: -2.2rem; }
+    .deal-body .price-burst-amount { font-size: 1.3rem; }
+    .menu-note { font-size: .72rem; letter-spacing: .08em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .deal-card,
+    .deal-flag i,
+    .landing-menu.is-tabbed .menu-panel.is-revealed .deal-card,
+    .landing-menu.is-tabbed .menu-panel.is-revealed .menu-card {
+        animation: none;
+    }
+    .deal-card,
+    .menu-card,
+    .price-burst,
+    .deal-media img,
+    .menu-card-media img {
+        transition: none;
+    }
+}

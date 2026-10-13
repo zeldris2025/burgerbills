@@ -76,9 +76,27 @@ def handle_access_denied(view_func):
     return wrapper
 
 
+# Menu showcase on the landing page. Each tab picks up the staff panel category
+# whose name contains its keyword, so prices and items stay in sync with what
+# staff edit in Menu Management.
+LANDING_MENU_SECTIONS = [
+    {'key': 'hot-deals', 'keyword': 'deal', 'label': 'Hot Deals', 'icon': 'fa-fire'},
+    {'key': 'combos', 'keyword': 'combo', 'label': 'Combos', 'icon': 'fa-box-open'},
+    {'key': 'meals', 'keyword': 'meal', 'label': 'Meals', 'icon': 'fa-burger'},
+]
+
+
 def index(request):
     """Show the public Burger Bills website without ordering entry points."""
-    return render(request, 'menu/index.html')
+    menu_sections = []
+    for section in LANDING_MENU_SECTIONS:
+        category = Category.objects.filter(name__icontains=section['keyword']).first()
+        if not category:
+            continue
+        items = list(category.items.filter(is_available=True))
+        if items:
+            menu_sections.append({**section, 'category': category, 'items': items})
+    return render(request, 'menu/index.html', {'menu_sections': menu_sections})
 
 
 def about(request):

@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import Order, OrderItem, Table
+from .models import Category, MenuItem, Order, OrderItem, Table
 
 
 _test_media = tempfile.TemporaryDirectory()
@@ -37,6 +37,33 @@ class LandingPageTests(TestCase):
 		self.assertNotContains(response, 'href="/staff/')
 		self.assertNotContains(response, 'href="/admin/')
 		self.assertNotContains(response, 'href="/table/')
+
+	def test_root_shows_hot_deals_combos_and_meals_from_menu(self):
+		deals = Category.objects.create(name="New & Hot Deals", order=0)
+		combos = Category.objects.create(name="Combos", order=1)
+		meals = Category.objects.create(name="Meal", order=2)
+		burgers = Category.objects.create(name="Burgers", order=3)
+		MenuItem.objects.create(category=deals, name="Fiafia Meal", description="Deal", price="17.00")
+		MenuItem.objects.create(category=combos, name="Share Box", description="Box", price="140.00")
+		MenuItem.objects.create(
+			category=meals, name="Fish & Chips", description="Meal", price="15.50",
+			has_sizes=True, size_small_price="15.50", size_large_price="17.50",
+		)
+		MenuItem.objects.create(category=meals, name="Sold Out Meal", description="Meal", price="9.00", is_available=False)
+		MenuItem.objects.create(category=burgers, name="Plain Burger", description="Burger", price="8.00")
+
+		response = self.client.get(reverse("index"))
+
+		self.assertContains(response, "Fiafia Meal")
+		self.assertContains(response, "Share Box")
+		self.assertContains(response, "Fish &amp; Chips")
+		self.assertContains(response, "$17.50")
+		self.assertNotContains(response, "Sold Out Meal")
+		self.assertNotContains(response, "Plain Burger")
+		self.assertEqual(
+			[section["key"] for section in response.context["menu_sections"]],
+			["hot-deals", "combos", "meals"],
+		)
 
 
 class OrderItemTests(TestCase):
