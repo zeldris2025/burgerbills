@@ -5,19 +5,24 @@ Proprietary and confidential. Unauthorized copying or distribution is prohibited
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.http import FileResponse, JsonResponse, HttpResponse, Http404
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import F, Q, Sum, Count, Prefetch
 from decimal import Decimal
 import csv
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import wraps
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
-from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
+from .forms import PromotionForm
+from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem, Promotion
 
 
 class AccessDeniedException(Exception):
@@ -76,6 +81,11 @@ def handle_access_denied(view_func):
     return wrapper
 
 
+# Promotion dates are entered and shown in restaurant time; the project's
+# TIME_ZONE stays UTC so nothing else shifts.
+RESTAURANT_TIME_ZONE = ZoneInfo('Pacific/Apia')
+
+
 # Menu showcase on the landing page. Each tab picks up the staff panel category
 # whose name contains its keyword, so prices and items stay in sync with what
 # staff edit in Menu Management.
@@ -96,7 +106,11 @@ def index(request):
         items = list(category.items.filter(is_available=True))
         if items:
             menu_sections.append({**section, 'category': category, 'items': items})
-    return render(request, 'menu/index.html', {'menu_sections': menu_sections})
+    with timezone.override(RESTAURANT_TIME_ZONE):
+        return render(request, 'menu/index.html', {
+            'menu_sections': menu_sections,
+            'promotions': Promotion.objects.live(),
+        })
 
 
 def about(request):
@@ -1319,10 +1333,13 @@ def manager_panel(request):
     from django.contrib.auth.models import User
     
     staff_users = User.objects.filter(is_staff=True, is_superuser=False)
+    marketing_users = User.objects.filter(groups__name=MARKETING_GROUP, is_superuser=False).distinct()
     
     context = {
         'staff_users': staff_users,
         'total_staff': staff_users.count(),
+        'marketing_users': marketing_users,
+        'total_marketing': marketing_users.count(),
     }
     return render(request, 'menu/manager_panel.html', context)
 
@@ -1342,27 +1359,35 @@ def create_staff_user(request):
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email', '').strip()
+        role = request.POST.get('role', 'staff')
         
         # Validate input
+        if role not in ('staff', 'marketing'):
+            return JsonResponse({'success': False, 'message': 'Unknown role'})
+
         if not username or not password:
             return JsonResponse({'success': False, 'message': 'Username and password required'})
         
         if User.objects.filter(username=username).exists():
             return JsonResponse({'success': False, 'message': 'Username already exists'})
         
-        # Create staff user
+        # Marketing users are deliberately not is_staff: that keeps them out of
+        # orders, menu management and the Django admin.
         staff_user = User.objects.create_user(
             username=username,
             password=password,
             email=email,
             first_name=first_name,
             last_name=last_name,
-            is_staff=True
+            is_staff=(role == 'staff')
         )
+        if role == 'marketing':
+            staff_user.groups.add(_marketing_group())
         
+        role_label = 'Marketing' if role == 'marketing' else 'Staff'
         return JsonResponse({
             'success': True,
-            'message': f'Staff user "{username}" created successfully!',
+            'message': f'{role_label} user "{username}" created successfully!',
             'staff_user': {
                 'id': staff_user.id,
                 'username': staff_user.username,
@@ -1384,16 +1409,146 @@ def delete_staff_user(request, user_id):
     from django.contrib.auth.models import User
     
     try:
-        user = User.objects.get(id=user_id, is_staff=True, is_superuser=False)
+        user = (
+            User.objects.filter(Q(is_staff=True) | Q(groups__name=MARKETING_GROUP), is_superuser=False)
+            .distinct()
+            .get(id=user_id)
+        )
         username = user.username
         user.delete()
         
         return JsonResponse({
             'success': True,
-            'message': f'Staff user "{username}" deleted successfully!'
+            'message': f'User "{username}" deleted successfully!'
         })
     
     except User.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Staff user not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
+
+
+# ============= MARKETING (PROMOTIONS) =============
+
+MARKETING_GROUP = 'Marketing'
+
+
+def _marketing_group():
+    from django.contrib.auth.models import Group
+    group, _ = Group.objects.get_or_create(name=MARKETING_GROUP)
+    return group
+
+
+def is_marketing_user(user):
+    """Marketing team members, plus managers, who can do everything."""
+    if not (user.is_authenticated and user.is_active):
+        return False
+    return user.is_superuser or user.groups.filter(name=MARKETING_GROUP).exists()
+
+
+def marketing_required(view_func):
+    """Only marketing users get in; dates in these views are read and shown in restaurant time."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not is_marketing_user(request.user):
+            return redirect(f"{reverse('marketing_login')}?{urlencode({'next': request.path})}")
+        with timezone.override(RESTAURANT_TIME_ZONE):
+            return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def marketing_login(request):
+    """Login page for the marketing team."""
+    from django.contrib.auth import authenticate, login
+    from django.utils.http import url_has_allowed_host_and_scheme
+
+    next_url = request.POST.get('next') or request.GET.get('next') or ''
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        next_url = ''
+
+    if request.method == 'POST':
+        user = authenticate(
+            request,
+            username=request.POST.get('username'),
+            password=request.POST.get('password'),
+        )
+        if user is not None and is_marketing_user(user):
+            login(request, user)
+            return redirect(next_url or 'marketing_panel')
+        return render(request, 'menu/marketing_login.html', {
+            'error': 'Invalid credentials or not a marketing team member',
+            'next': next_url,
+        })
+
+    return render(request, 'menu/marketing_login.html', {'next': next_url})
+
+
+def marketing_logout(request):
+    from django.contrib.auth import logout
+    logout(request)
+    return redirect('marketing_login')
+
+
+@marketing_required
+def marketing_panel(request):
+    """All promotions, grouped by where they are in their run."""
+    promotions = list(Promotion.objects.select_related('created_by'))
+    order = {'live': 0, 'scheduled': 1, 'draft': 2, 'ended': 3}
+    promotions.sort(key=lambda promo: (order[promo.status], promo.display_order, promo.ends_at))
+    counts = {status: sum(1 for promo in promotions if promo.status == status) for status in order}
+    return render(request, 'menu/marketing_panel.html', {
+        'promotions': promotions,
+        'counts': counts,
+    })
+
+
+@marketing_required
+def marketing_promotion_create(request):
+    if request.method == 'POST':
+        form = PromotionForm(request.POST, request.FILES)
+        if form.is_valid():
+            promotion = form.save(commit=False)
+            promotion.created_by = request.user
+            promotion.save()
+            messages.success(request, f'"{promotion.title}" was created.')
+            return redirect('marketing_panel')
+    else:
+        now = timezone.localtime().replace(minute=0, second=0, microsecond=0)
+        form = PromotionForm(initial={'starts_at': now, 'ends_at': now + timedelta(days=7)})
+    return render(request, 'menu/marketing_promotion_form.html', {'form': form})
+
+
+@marketing_required
+def marketing_promotion_edit(request, promotion_id):
+    promotion = get_object_or_404(Promotion, pk=promotion_id)
+    if request.method == 'POST':
+        form = PromotionForm(request.POST, request.FILES, instance=promotion)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'"{promotion.title}" was updated.')
+            return redirect('marketing_panel')
+    else:
+        form = PromotionForm(instance=promotion)
+    return render(request, 'menu/marketing_promotion_form.html', {'form': form, 'promotion': promotion})
+
+
+@marketing_required
+@require_http_methods(["POST"])
+def marketing_promotion_toggle(request, promotion_id):
+    promotion = get_object_or_404(Promotion, pk=promotion_id)
+    promotion.is_published = not promotion.is_published
+    promotion.save(update_fields=['is_published', 'updated_at'])
+    state = 'published' if promotion.is_published else 'unpublished'
+    messages.success(request, f'"{promotion.title}" was {state}.')
+    return redirect('marketing_panel')
+
+
+@marketing_required
+@require_http_methods(["POST"])
+def marketing_promotion_delete(request, promotion_id):
+    promotion = get_object_or_404(Promotion, pk=promotion_id)
+    title = promotion.title
+    promotion.hero_image.delete(save=False)
+    promotion.delete()
+    messages.success(request, f'"{title}" was deleted.')
+    return redirect('marketing_panel')

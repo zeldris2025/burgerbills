@@ -1,12 +1,18 @@
+import io
 import tempfile
+from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
+from PIL import Image
 
-from .models import Category, MenuItem, Order, OrderItem, Table
+from .models import Category, MenuItem, Order, OrderItem, Promotion, Table
 
 
 _test_media = tempfile.TemporaryDirectory()
@@ -441,3 +447,136 @@ class OrderCompletionAlertTests(TestCase):
 		self.assertContains(response, "!orderIsCompleted && stepIndex === currentIndex")
 		self.assertContains(response, "orderStatus === 'ready' || orderStatus === 'completed'")
 		self.assertContains(response, "navigator.vibrate([400, 150, 400, 150, 600])")
+
+
+def _png(name="promo.png"):
+	buffer = io.BytesIO()
+	Image.new("RGB", (16, 10), "red").save(buffer, "PNG")
+	return SimpleUploadedFile(name, buffer.getvalue(), content_type="image/png")
+
+
+def _marketing_user(username="marketer"):
+	user = get_user_model().objects.create_user(username=username, password="password")
+	user.groups.add(Group.objects.get_or_create(name="Marketing")[0])
+	return user
+
+
+def _promotion(title, starts_in=timedelta(days=-1), ends_in=timedelta(days=1), **extra):
+	now = timezone.now()
+	return Promotion.objects.create(
+		title=title,
+		hero_image=_png(),
+		starts_at=now + starts_in,
+		ends_at=now + ends_in,
+		**extra,
+	)
+
+
+class MarketingAccessTests(TestCase):
+	def test_marketing_user_can_log_in_and_reach_promotions(self):
+		_marketing_user()
+
+		response = self.client.post(reverse("marketing_login"), {"username": "marketer", "password": "password"})
+
+		self.assertRedirects(response, reverse("marketing_panel"))
+		self.assertContains(self.client.get(reverse("marketing_panel")), "Promotions")
+
+	def test_staff_cannot_use_marketing_panel(self):
+		staff = get_user_model().objects.create_user(username="cook", password="password", is_staff=True)
+
+		login = self.client.post(reverse("marketing_login"), {"username": "cook", "password": "password"})
+		self.assertContains(login, "not a marketing team member")
+
+		self.client.force_login(staff)
+		response = self.client.get(reverse("marketing_panel"))
+		self.assertRedirects(response, f"{reverse('marketing_login')}?next=%2Fmarketing%2F")
+
+	def test_marketing_cannot_use_staff_panel_or_admin(self):
+		self.client.force_login(_marketing_user())
+
+		self.assertNotEqual(self.client.get(reverse("staff_panel")).status_code, 200)
+		self.assertNotEqual(self.client.get("/admin/").status_code, 200)
+
+	def test_manager_creates_marketing_user_without_staff_access(self):
+		manager = get_user_model().objects.create_superuser(username="boss", password="password")
+		self.client.force_login(manager)
+
+		response = self.client.post(reverse("create_staff_user"), {
+			"username": "promo-team", "password": "password", "role": "marketing",
+		})
+
+		self.assertTrue(response.json()["success"])
+		user = get_user_model().objects.get(username="promo-team")
+		self.assertFalse(user.is_staff)
+		self.assertTrue(user.groups.filter(name="Marketing").exists())
+		self.assertContains(self.client.get(reverse("manager_panel")), "promo-team")
+
+
+class PromotionTests(TestCase):
+	def setUp(self):
+		self.client.force_login(_marketing_user())
+
+	def test_marketing_creates_promotion_in_samoa_time(self):
+		response = self.client.post(reverse("marketing_promotion_create"), {
+			"title": "Lunch Stack",
+			"badge": "New",
+			"hero_image": _png(),
+			"price": "15",
+			"original_price": "20",
+			"starts_at": "2026-10-14T09:00",
+			"ends_at": "2026-10-21T21:00",
+			"is_published": "on",
+			"display_order": "0",
+		})
+
+		self.assertRedirects(response, reverse("marketing_panel"))
+		promo = Promotion.objects.get(title="Lunch Stack")
+		self.assertEqual(promo.savings, 5)
+		# 9am in Apia (UTC+13) is 8pm the previous day in UTC.
+		self.assertEqual((promo.starts_at.day, promo.starts_at.hour), (13, 20))
+		self.assertIsNotNone(promo.created_by)
+
+	def test_end_before_start_is_rejected(self):
+		response = self.client.post(reverse("marketing_promotion_create"), {
+			"title": "Backwards",
+			"hero_image": _png(),
+			"starts_at": "2026-10-21T09:00",
+			"ends_at": "2026-10-14T09:00",
+			"display_order": "0",
+		})
+
+		self.assertContains(response, "has to end after it starts")
+		self.assertFalse(Promotion.objects.exists())
+
+	def test_toggle_and_delete(self):
+		promo = _promotion("Toggle me")
+
+		self.client.post(reverse("marketing_promotion_toggle", args=[promo.pk]))
+		promo.refresh_from_db()
+		self.assertFalse(promo.is_published)
+
+		self.client.post(reverse("marketing_promotion_delete", args=[promo.pk]))
+		self.assertFalse(Promotion.objects.exists())
+
+
+class LandingPromotionTests(TestCase):
+	def test_only_live_published_promotions_show(self):
+		_promotion("Live Deal", price="12.50")
+		_promotion("Finished Deal", starts_in=timedelta(days=-5), ends_in=timedelta(minutes=-1))
+		_promotion("Future Deal", starts_in=timedelta(days=1), ends_in=timedelta(days=3))
+		_promotion("Draft Deal", is_published=False)
+
+		response = self.client.get(reverse("index"))
+
+		self.assertContains(response, "Live Deal")
+		self.assertContains(response, "<sup>$</sup>12.50", html=False)
+		self.assertNotContains(response, "Finished Deal")
+		self.assertNotContains(response, "Future Deal")
+		self.assertNotContains(response, "Draft Deal")
+		self.assertNotContains(response, 'href="/marketing/')
+
+	def test_section_is_absent_without_live_promotions(self):
+		response = self.client.get(reverse("index"))
+
+		self.assertNotContains(response, 'id="promotions"')
+

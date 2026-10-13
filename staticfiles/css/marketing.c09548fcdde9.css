@@ -1,0 +1,484 @@
+/* Marketing panel: promotions desk for the marketing team.
+   Uses the landing page palette so promotions are built in the brand they ship in. */
+
+:root {
+    --mk-ink: #181512;
+    --mk-paper: #f6f0e6;
+    --mk-card: #fffaf2;
+    --mk-line: #e2d8c8;
+    --mk-muted: #6d655a;
+    --mk-red: #d84228;
+    --mk-yellow: #f4b83e;
+    --mk-green: #446b45;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--mk-paper);
+    color: var(--mk-ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    line-height: 1.5;
+}
+
+a { color: inherit; }
+
+h1, h2 { margin: 0; }
+
+.mk-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* Header */
+.mk-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem 1.5rem;
+    padding: .9rem clamp(1rem, 4vw, 3rem);
+    background: linear-gradient(115deg, #171310 0%, #2a1d15 100%);
+    color: #fff;
+}
+
+.mk-brand {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    text-decoration: none;
+}
+
+.mk-brand img { width: 44px; height: 44px; object-fit: contain; }
+
+.mk-brand span { display: flex; flex-direction: column; line-height: 1.1; }
+
+.mk-brand strong { font-family: 'Rye', serif; font-weight: 400; font-size: 1.05rem; }
+
+.mk-brand small {
+    color: var(--mk-yellow);
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.mk-nav { display: flex; flex-wrap: wrap; gap: .35rem; }
+
+.mk-nav a {
+    padding: .5rem .85rem;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, .78);
+    font-size: .85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mk-nav a:hover,
+.mk-nav a[aria-current="page"] {
+    background: rgba(244, 184, 62, .14);
+    color: var(--mk-yellow);
+}
+
+.mk-main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) 4rem;
+}
+
+/* Messages */
+.mk-messages { margin-bottom: 1.5rem; }
+
+.mk-message {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0 0 .6rem;
+    padding: .8rem 1rem;
+    border-radius: 12px;
+    background: #e6efe3;
+    color: #2d4a2e;
+    font-weight: 600;
+}
+
+.mk-message--error { background: #fbe5df; color: #9b2b17; }
+
+/* Page head */
+.mk-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 1.75rem;
+}
+
+.mk-page-head h1 {
+    font-family: 'Rye', serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.1;
+}
+
+.mk-page-head p { max-width: 560px; margin: .5rem 0 0; color: var(--mk-muted); }
+
+.mk-kicker {
+    display: block;
+    margin-bottom: .4rem;
+    color: var(--mk-red);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+.mk-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: .5rem;
+    color: var(--mk-muted);
+    font-size: .88rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mk-back:hover { color: var(--mk-red); }
+
+/* Buttons */
+.mk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    min-height: 42px;
+    padding: .55rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: none;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.mk-btn:hover { transform: translateY(-1px); }
+
+.mk-btn:focus-visible { outline: 2px solid var(--mk-ink); outline-offset: 3px; }
+
+.mk-btn--primary {
+    background: var(--mk-red);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(216, 66, 40, .25);
+}
+
+.mk-btn--primary:hover { background: #c1371f; }
+
+.mk-btn--ghost { border-color: var(--mk-line); background: var(--mk-card); color: var(--mk-ink); }
+
+.mk-btn--ghost:hover { border-color: var(--mk-ink); }
+
+.mk-btn--danger { border-color: #efc7bd; background: var(--mk-card); color: #b0331c; }
+
+.mk-btn--danger:hover { background: #b0331c; color: #fff; }
+
+.mk-btn--block { width: 100%; }
+
+/* Stats */
+.mk-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .85rem;
+    margin: 0 0 2rem;
+    padding: 0;
+    list-style: none;
+}
+
+.mk-stat {
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--mk-line);
+    border-top: 4px solid var(--mk-line);
+    border-radius: 14px;
+    background: var(--mk-card);
+}
+
+.mk-stat strong { display: block; font-family: 'Rye', serif; font-size: 1.9rem; font-weight: 400; line-height: 1.1; }
+
+.mk-stat span { color: var(--mk-muted); font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+.mk-stat--live { border-top-color: var(--mk-green); }
+.mk-stat--scheduled { border-top-color: var(--mk-yellow); }
+.mk-stat--draft { border-top-color: #9a9186; }
+.mk-stat--ended { border-top-color: var(--mk-red); }
+
+/* Promotion list */
+.mk-promo-list { display: grid; gap: .9rem; margin: 0; padding: 0; list-style: none; }
+
+.mk-promo {
+    display: grid;
+    grid-template-columns: 150px 1fr auto;
+    align-items: center;
+    gap: 1.25rem;
+    padding: .9rem;
+    border: 1px solid var(--mk-line);
+    border-radius: 18px;
+    background: var(--mk-card);
+}
+
+.mk-promo--ended { opacity: .7; }
+
+.mk-promo-thumb {
+    width: 150px;
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #2b1a12;
+}
+
+.mk-promo-info h2 { margin: .3rem 0 .1rem; font-size: 1.15rem; }
+
+.mk-promo-tagline { margin: 0; color: var(--mk-muted); }
+
+.mk-promo-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem 1.1rem;
+    margin: .5rem 0 0;
+    color: #4a433b;
+    font-size: .85rem;
+}
+
+.mk-promo-meta i { color: var(--mk-red); margin-right: .2rem; }
+
+.mk-promo-meta s { color: var(--mk-muted); }
+
+.mk-promo-actions { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: flex-end; }
+
+.mk-promo-actions form { margin: 0; }
+
+.mk-status {
+    display: inline-block;
+    padding: .18rem .6rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.mk-status--live { background: #dfeedd; color: #2d5a2f; }
+.mk-status--scheduled { background: #fdf0d2; color: #8a5b00; }
+.mk-status--draft { background: #ece7df; color: #5c554c; }
+.mk-status--ended { background: #f8dfd8; color: #9b2b17; }
+
+.mk-empty {
+    padding: 3.5rem 1.5rem;
+    border: 2px dashed var(--mk-line);
+    border-radius: 18px;
+    text-align: center;
+}
+
+.mk-empty > i { color: var(--mk-red); font-size: 2.2rem; }
+
+.mk-empty h2 { margin: .75rem 0 .3rem; font-family: 'Rye', serif; font-weight: 400; }
+
+.mk-empty p { margin: 0 0 1.25rem; color: var(--mk-muted); }
+
+/* Editor */
+.mk-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    align-items: start;
+    gap: 2rem;
+}
+
+.mk-form { display: grid; gap: 1.1rem; }
+
+.mk-card {
+    min-width: 0;
+    margin: 0;
+    padding: 1.25rem 1.35rem 1.4rem;
+    border: 1px solid var(--mk-line);
+    border-radius: 18px;
+    background: var(--mk-card);
+}
+
+.mk-card legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0;
+    font-family: 'Rye', serif;
+    font-size: 1.15rem;
+}
+
+.mk-legend-note {
+    margin-left: .4rem;
+    color: var(--mk-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.mk-card legend + * { clear: both; }
+
+.mk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.1rem; }
+
+.mk-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.mk-field { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+
+.mk-field--wide { grid-column: 1 / -1; }
+
+.mk-field > label { font-size: .88rem; font-weight: 700; }
+
+.mk-required { color: var(--mk-red); }
+
+.form-control {
+    width: 100%;
+    min-height: 44px;
+    padding: .6rem .8rem;
+    border: 1.5px solid var(--mk-line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--mk-ink);
+    font: inherit;
+}
+
+.form-control:focus {
+    border-color: var(--mk-red);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(216, 66, 40, .15);
+}
+
+textarea.form-control { resize: vertical; }
+
+.has-error .form-control { border-color: #c0392b; }
+
+.mk-help { color: var(--mk-muted); font-size: .8rem; }
+
+.mk-card > .mk-help { display: block; margin: .9rem 0 0; }
+
+.mk-error { color: #b0331c; font-size: .82rem; font-weight: 600; }
+
+.mk-check {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-height: 44px;
+    margin-top: 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.mk-check input { width: 20px; height: 20px; accent-color: var(--mk-red); }
+
+/* Django's clearable file input renders "Currently / Clear / Change" text; keep it tidy. */
+.mk-field a { color: var(--mk-red); word-break: break-all; }
+
+.mk-form-actions { display: flex; justify-content: flex-end; gap: .6rem; }
+
+/* Live preview */
+.mk-preview { position: sticky; top: 1.5rem; }
+
+.mk-preview-card {
+    overflow: hidden;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 18px 40px rgba(24, 21, 18, .16);
+}
+
+.mk-preview-media {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, #2b1a12, #4a2416);
+}
+
+.mk-preview-media img { width: 100%; height: 100%; object-fit: cover; }
+
+.mk-preview-placeholder { color: rgba(255, 255, 255, .55); font-weight: 600; }
+
+.mk-preview-badge {
+    position: absolute;
+    top: .8rem;
+    left: .8rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    background: var(--mk-red);
+    color: #fff;
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.mk-preview-body { padding: 1.1rem 1.2rem 1.3rem; }
+
+.mk-preview-body h2 { font-family: 'Rye', serif; font-size: 1.3rem; font-weight: 400; line-height: 1.2; }
+
+.mk-preview-body p { margin: .35rem 0 0; color: var(--mk-muted); }
+
+.mk-preview-price strong { color: var(--mk-red); font-family: 'Rye', serif; font-size: 1.5rem; font-weight: 400; }
+
+/* Login */
+.mk-login-page {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 15% 10%, rgba(216, 66, 40, .35), transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(244, 184, 62, .2), transparent 35%),
+        linear-gradient(115deg, #171310 0%, #2a1d15 100%);
+}
+
+.mk-login-page .mk-main { display: grid; place-items: center; min-height: 100vh; padding-block: 2rem; }
+
+.mk-login {
+    width: min(100%, 420px);
+    padding: 2.25rem clamp(1.25rem, 5vw, 2.25rem);
+    border-radius: 24px;
+    background: var(--mk-paper);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .45);
+    text-align: center;
+}
+
+.mk-login-logo { width: 72px; height: 72px; object-fit: contain; margin-bottom: .75rem; }
+
+.mk-login h1 { font-family: 'Rye', serif; font-size: 2rem; font-weight: 400; }
+
+.mk-login-lead { margin: .5rem 0 1.5rem; color: var(--mk-muted); }
+
+.mk-login-form { display: grid; gap: 1rem; text-align: left; }
+
+.mk-login-foot { margin: 1.25rem 0 0; color: var(--mk-muted); font-size: .82rem; }
+
+.mk-login-foot i { color: var(--mk-red); }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .mk-editor { grid-template-columns: 1fr; }
+    .mk-preview { position: static; order: -1; max-width: 420px; }
+    .mk-promo { grid-template-columns: 110px 1fr; }
+    .mk-promo-thumb { width: 110px; }
+    .mk-promo-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+@media (max-width: 560px) {
+    .mk-stats { grid-template-columns: repeat(2, 1fr); }
+    .mk-grid,
+    .mk-grid--3 { grid-template-columns: 1fr; }
+    .mk-promo { grid-template-columns: 1fr; }
+    .mk-promo-thumb { width: 100%; }
+    .mk-form-actions { flex-direction: column-reverse; }
+    .mk-form-actions .mk-btn { width: 100%; }
+    .mk-check { margin-top: 0; }
+}

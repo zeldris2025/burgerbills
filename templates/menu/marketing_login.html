@@ -1,0 +1,34 @@
+{% extends 'menu/marketing_base.html' %}
+{% load static %}
+
+{% block title %}Marketing login{% endblock %}
+{% block body_class %}mk-login-page{% endblock %}
+{% block header %}{% endblock %}
+
+{% block content %}
+<section class="mk-login" aria-labelledby="mk-login-title">
+    <img class="mk-login-logo" src="{% static 'images/logo.png' %}" alt="Burger Bills">
+    <span class="mk-kicker">Marketing team</span>
+    <h1 id="mk-login-title">Promotions desk</h1>
+    <p class="mk-login-lead">Sign in to create and schedule the promotions shown on the Burger Bills website.</p>
+
+    {% if error %}
+    <p class="mk-message mk-message--error" role="alert"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> {{ error }}</p>
+    {% endif %}
+
+    <form method="post" class="mk-login-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="mk-field">
+            <label for="username">Username</label>
+            <input class="form-control" type="text" id="username" name="username" autocomplete="username" required autofocus>
+        </div>
+        <div class="mk-field">
+            <label for="password">Password</label>
+            <input class="form-control" type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="mk-btn mk-btn--primary mk-btn--block"><i class="fas fa-right-to-bracket" aria-hidden="true"></i> Sign in</button>
+    </form>
+    <p class="mk-login-foot"><i class="fas fa-shield-halved" aria-hidden="true"></i> Marketing access only. Ask a manager for an account.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'menu/marketing_base.html' %}
+
+{% block title %}Promotions{% endblock %}
+
+{% block content %}
+<div class="mk-page-head">
+    <div>
+        <span class="mk-kicker">Hi {{ request.user.first_name|default:request.user.username }}</span>
+        <h1>Promotions</h1>
+        <p>Live promotions appear on the homepage between the hero and the menu, and drop off automatically when they end. Times are Samoa time.</p>
+    </div>
+    <a class="mk-btn mk-btn--primary" href="{% url 'marketing_promotion_create' %}"><i class="fas fa-plus" aria-hidden="true"></i> New promotion</a>
+</div>
+
+<ul class="mk-stats" aria-label="Promotion summary">
+    <li class="mk-stat mk-stat--live"><strong>{{ counts.live }}</strong><span>Live now</span></li>
+    <li class="mk-stat mk-stat--scheduled"><strong>{{ counts.scheduled }}</strong><span>Scheduled</span></li>
+    <li class="mk-stat mk-stat--draft"><strong>{{ counts.draft }}</strong><span>Drafts</span></li>
+    <li class="mk-stat mk-stat--ended"><strong>{{ counts.ended }}</strong><span>Ended</span></li>
+</ul>
+
+{% if promotions %}
+<ul class="mk-promo-list">
+    {% for promo in promotions %}
+    <li class="mk-promo mk-promo--{{ promo.status }}">
+        <img class="mk-promo-thumb" src="{{ promo.hero_image.url }}" alt="" loading="lazy">
+        <div class="mk-promo-info">
+            <span class="mk-status mk-status--{{ promo.status }}">{{ promo.status|capfirst }}</span>
+            <h2>{{ promo.title }}</h2>
+            {% if promo.tagline %}<p class="mk-promo-tagline">{{ promo.tagline }}</p>{% endif %}
+            <p class="mk-promo-meta">
+                {% if promo.price is not None %}<span><i class="fas fa-tag" aria-hidden="true"></i> ${{ promo.price|floatformat:"-2" }}{% if promo.original_price %} <s>${{ promo.original_price|floatformat:"-2" }}</s>{% endif %}</span>{% endif %}
+                <span><i class="far fa-calendar" aria-hidden="true"></i> {{ promo.starts_at|date:"D j M, g:i A" }} &rarr; {{ promo.ends_at|date:"D j M, g:i A" }}</span>
+                {% if promo.daily_start_time %}<span><i class="far fa-clock" aria-hidden="true"></i> {{ promo.daily_start_time|time:"g:i A" }}&ndash;{{ promo.daily_end_time|time:"g:i A" }} daily</span>{% endif %}
+            </p>
+        </div>
+        <div class="mk-promo-actions">
+            <a class="mk-btn mk-btn--ghost" href="{% url 'marketing_promotion_edit' promo.pk %}"><i class="fas fa-pen" aria-hidden="true"></i> Edit</a>
+            <form method="post" action="{% url 'marketing_promotion_toggle' promo.pk %}">
+                {% csrf_token %}
+                {% if promo.is_published %}
+                <button type="submit" class="mk-btn mk-btn--ghost"><i class="fas fa-eye-slash" aria-hidden="true"></i> Unpublish</button>
+                {% else %}
+                <button type="submit" class="mk-btn mk-btn--ghost"><i class="fas fa-eye" aria-hidden="true"></i> Publish</button>
+                {% endif %}
+            </form>
+            <form method="post" action="{% url 'marketing_promotion_delete' promo.pk %}" data-confirm="Delete &quot;{{ promo.title }}&quot;? This can't be undone.">
+                {% csrf_token %}
+                <button type="submit" class="mk-btn mk-btn--danger"><i class="fas fa-trash" aria-hidden="true"></i><span class="mk-sr">Delete {{ promo.title }}</span></button>
+            </form>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<div class="mk-empty">
+    <i class="fas fa-bullhorn" aria-hidden="true"></i>
+    <h2>No promotions yet</h2>
+    <p>Create your first one and it'll show up on the homepage as soon as it starts.</p>
+    <a class="mk-btn mk-btn--primary" href="{% url 'marketing_promotion_create' %}"><i class="fas fa-plus" aria-hidden="true"></i> New promotion</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('form[data-confirm]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+        if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    });
+});
+</script>
+{% endblock %}

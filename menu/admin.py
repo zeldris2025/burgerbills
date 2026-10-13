@@ -5,7 +5,7 @@ Proprietary and confidential. Unauthorized copying or distribution is prohibited
 """
 
 from django.contrib import admin
-from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem
+from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem, Promotion
 
 
 @admin.register(MarqueeSettings)
@@ -120,3 +120,12 @@ class OrderAdmin(admin.ModelAdmin):
 
 admin.site.site_header = "Burger Bills Admin"
 admin.site.site_title = "Restaurant Admin Portal"
+
+
+@admin.register(Promotion)
+class PromotionAdmin(admin.ModelAdmin):
+    list_display = ('title', 'price', 'starts_at', 'ends_at', 'is_published', 'display_order')
+    list_filter = ('is_published',)
+    list_editable = ('is_published', 'display_order')
+    search_fields = ('title', 'tagline', 'description')
+    readonly_fields = ('created_by', 'created_at', 'updated_at')

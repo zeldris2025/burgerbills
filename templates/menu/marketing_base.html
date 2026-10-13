@@ -1,0 +1,42 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>{% block title %}Marketing{% endblock %} · Burger Bills</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/marketing.css' %}?v=1">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% block header %}
+    <header class="mk-header">
+        <a class="mk-brand" href="{% url 'marketing_panel' %}">
+            <img src="{% static 'images/logo.png' %}" alt="">
+            <span><strong>Burger Bills</strong><small>Marketing</small></span>
+        </a>
+        <nav class="mk-nav" aria-label="Marketing">
+            <a href="{% url 'marketing_panel' %}"{% if request.resolver_match.url_name == 'marketing_panel' %} aria-current="page"{% endif %}><i class="fas fa-bullhorn" aria-hidden="true"></i> Promotions</a>
+            <a href="{% url 'index' %}" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> View website</a>
+            <a href="{% url 'marketing_logout' %}"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Log out</a>
+        </nav>
+    </header>
+    {% endblock %}
+
+    <main class="mk-main">
+        {% if messages %}
+        <div class="mk-messages" role="status">
+            {% for message in messages %}
+            <p class="mk-message mk-message--{{ message.tags }}"><i class="fas fa-circle-check" aria-hidden="true"></i> {{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -232,9 +232,14 @@
             <h1><i class="fas fa-crown"></i> Manager Panel</h1>
             <p class="mb-0">Manage your staff members and restaurant operations</p>
         </div>
-        <a href="{% url 'manager_logout' %}" class="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'marketing_panel' %}" class="logout-btn text-decoration-none">
+                <i class="fas fa-bullhorn"></i> Promotions
+            </a>
+            <a href="{% url 'manager_logout' %}" class="logout-btn text-decoration-none">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
     </div>
 </div>
 
@@ -246,18 +251,35 @@
             <div class="number">{{ total_staff }}</div>
         </div>
     </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <div class="label">Marketing Team</div>
+            <div class="number">{{ total_marketing }}</div>
+        </div>
+    </div>
 </div>
 
 <!-- Create New Staff User -->
 <div class="card">
     <div class="card-header">
         <h5 class="card-title">
-            <i class="fas fa-user-plus"></i> Create New Staff Member
+            <i class="fas fa-user-plus"></i> Create New Team Member
         </h5>
     </div>
     <div class="card-body">
         <form id="createStaffForm" enctype="multipart/form-data">
             {% csrf_token %}
+            <div class="form-group">
+                <label for="role">
+                    <i class="fas fa-user-tag"></i> Access Level *
+                </label>
+                <select class="form-control" id="role" name="role" aria-describedby="role-help">
+                    <option value="staff" selected>Staff &mdash; orders, kitchen and menu</option>
+                    <option value="marketing">Marketing &mdash; website promotions only</option>
+                </select>
+                <small id="role-help" class="text-muted">Marketing users can only sign in at <a href="{% url 'marketing_login' %}">/marketing/login/</a> and manage promotions.</small>
+            </div>
+
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -309,7 +331,7 @@
             </div>
 
             <button type="submit" class="btn-add">
-                <i class="fas fa-plus-circle"></i> Create Staff Member
+                <i class="fas fa-plus-circle"></i> Create Team Member
             </button>
         </form>
     </div>
@@ -375,6 +397,64 @@
     </div>
 </div>
 
+<!-- Marketing Team List -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="fas fa-bullhorn"></i> Marketing Team ({{ total_marketing }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if marketing_users %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Access</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in marketing_users %}
+                            <tr>
+                                <td><strong>{{ member.username }}</strong></td>
+                                <td>{{ member.first_name }} {{ member.last_name }}</td>
+                                <td>
+                                    {% if member.email %}
+                                        {{ member.email }}
+                                    {% else %}
+                                        <span style="color: #999;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="staff-badge" style="background: #fdf0d2; color: #8a5b00;">
+                                        <i class="fas fa-bullhorn"></i> Promotions only
+                                    </span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn-delete"
+                                            onclick="deleteStaffUser({{ member.id }}, '{{ member.username|escapejs }}')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-bullhorn"></i>
+                <h3>No Marketing Members Yet</h3>
+                <p>Pick &ldquo;Marketing&rdquo; as the access level above to add one.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
 <script>
     document.getElementById('createStaffForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -401,7 +481,7 @@
     });
 
     function deleteStaffUser(userId, username) {
-        if (!confirm(`Are you sure you want to delete staff member "${username}"?`)) {
+        if (!confirm(`Are you sure you want to delete "${username}"?`)) {
             return;
         }
 

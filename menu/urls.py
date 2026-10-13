@@ -59,4 +59,13 @@ urlpatterns = [
     path('manager/panel/', views.manager_panel, name='manager_panel'),
     path('manager/create-staff-user/', views.create_staff_user, name='create_staff_user'),
     path('manager/delete-staff-user/<int:user_id>/', views.delete_staff_user, name='delete_staff_user'),
+
+    # Marketing team: promotions only
+    path('marketing/login/', views.marketing_login, name='marketing_login'),
+    path('marketing/logout/', views.marketing_logout, name='marketing_logout'),
+    path('marketing/', views.marketing_panel, name='marketing_panel'),
+    path('marketing/promotions/new/', views.marketing_promotion_create, name='marketing_promotion_create'),
+    path('marketing/promotions/<int:promotion_id>/edit/', views.marketing_promotion_edit, name='marketing_promotion_edit'),
+    path('marketing/promotions/<int:promotion_id>/toggle/', views.marketing_promotion_toggle, name='marketing_promotion_toggle'),
+    path('marketing/promotions/<int:promotion_id>/delete/', views.marketing_promotion_delete, name='marketing_promotion_delete'),
 ]

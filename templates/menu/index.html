@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Rye&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=menu-3">
+<link rel="stylesheet" href="{% static 'css/landing.css' %}?v=promos-3">
 {% endblock %}
 
 {% block content %}
@@ -74,6 +74,62 @@
             </div>
         </div>
     </div>
+
+    {% if promotions %}
+    <section class="landing-promos" id="promotions" aria-labelledby="promos-heading" data-promos>
+        <div class="promos-head">
+            <div>
+                <span class="section-label">Limited time only</span>
+                <h2 id="promos-heading">Grab it <em>while it&rsquo;s hot.</em></h2>
+            </div>
+            <div class="promos-controls" hidden>
+                <button type="button" class="promos-arrow" data-promos-prev aria-label="Previous promotion"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
+                <span class="promos-count" aria-live="polite"><b data-promos-current>1</b> / <span data-promos-total>{{ promotions|length }}</span></span>
+                <button type="button" class="promos-arrow" data-promos-next aria-label="Next promotion"><i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                <button type="button" class="promos-arrow promos-play" data-promos-play aria-label="Pause slideshow"><i class="fas fa-pause" aria-hidden="true"></i></button>
+            </div>
+        </div>
+
+        <div class="promos-track" data-promos-track>
+            {% for promo in promotions %}
+            <article class="promo-slide" data-ends-at="{{ promo.ends_at|date:'c' }}" aria-roledescription="slide" aria-labelledby="promo-title-{{ promo.pk }}">
+                <div class="promo-media">
+                    <img src="{{ promo.hero_image.url }}" alt="{{ promo.title }}"{% if not forloop.first %} loading="lazy"{% endif %}>
+                    {% if promo.badge %}<span class="promo-badge"><i class="fas fa-bolt" aria-hidden="true"></i> {{ promo.badge }}</span>{% endif %}
+                </div>
+                <div class="promo-body">
+                    <h3 id="promo-title-{{ promo.pk }}">{{ promo.title }}</h3>
+                    {% if promo.tagline %}<p class="promo-tagline">{{ promo.tagline }}</p>{% endif %}
+                    {% if promo.description %}<p class="promo-description">{{ promo.description|linebreaksbr }}</p>{% endif %}
+
+                    {% if promo.price is not None %}
+                    <div class="promo-price-row">
+                        <span class="promo-price"><sup>$</sup>{{ promo.price|floatformat:"-2" }}</span>
+                        <span class="promo-price-extra">
+                            {% if promo.price_note %}<span class="promo-price-note">{{ promo.price_note }}</span>{% endif %}
+                            {% if promo.original_price %}<span class="promo-was">Was <s>${{ promo.original_price|floatformat:"-2" }}</s></span>{% endif %}
+                        </span>
+                        {% if promo.savings %}<span class="promo-save">Save ${{ promo.savings|floatformat:"-2" }}</span>{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <ul class="promo-meta">
+                        {% if promo.starts_at|date:"Ymd" == promo.ends_at|date:"Ymd" %}
+                        <li><i class="far fa-calendar" aria-hidden="true"></i> {{ promo.starts_at|date:"D j M" }}, {{ promo.starts_at|time:"g:i A" }} &ndash; {{ promo.ends_at|time:"g:i A" }}</li>
+                        {% else %}
+                        <li><i class="far fa-calendar" aria-hidden="true"></i> {{ promo.starts_at|date:"j M" }} &ndash; {{ promo.ends_at|date:"j M Y" }}</li>
+                        {% endif %}
+                        {% if promo.daily_start_time %}<li><i class="far fa-clock" aria-hidden="true"></i> {{ promo.daily_start_time|time:"g:i A" }} &ndash; {{ promo.daily_end_time|time:"g:i A" }} daily</li>{% endif %}
+                        <li class="promo-countdown"><i class="fas fa-hourglass-half" aria-hidden="true"></i> <span data-countdown>Ends {{ promo.ends_at|date:"D j M, g:i A" }}</span></li>
+                    </ul>
+                    {% if promo.terms %}<p class="promo-terms">{{ promo.terms }}</p>{% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <div class="promos-progress" aria-hidden="true" hidden><span data-promos-progress></span></div>
+    </section>
+    {% endif %}
 
     {% if menu_sections %}
     <section class="landing-menu" id="menu" aria-labelledby="menu-heading" data-landing-menu>
@@ -207,4 +263,5 @@
 <script src="{% static 'js/landing.js' %}?v=20260819-5"></script>
 <script src="{% static 'js/orbit-menu.js' %}?v=2"></script>
 <script src="{% static 'js/landing-menu.js' %}?v=1"></script>
+<script src="{% static 'js/landing-promos.js' %}?v=2"></script>
 {% endblock %}

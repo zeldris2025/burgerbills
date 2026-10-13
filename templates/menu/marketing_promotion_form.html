@@ -1,0 +1,125 @@
+{% extends 'menu/marketing_base.html' %}
+
+{% block title %}{% if promotion %}Edit {{ promotion.title }}{% else %}New promotion{% endif %}{% endblock %}
+
+{% block content %}
+<div class="mk-page-head">
+    <div>
+        <a class="mk-back" href="{% url 'marketing_panel' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i> All promotions</a>
+        <h1>{% if promotion %}Edit promotion{% else %}New promotion{% endif %}</h1>
+    </div>
+</div>
+
+{% if form.errors %}
+<p class="mk-message mk-message--error" role="alert"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> Please fix the highlighted fields below.</p>
+{% endif %}
+{% for error in form.non_field_errors %}
+<p class="mk-message mk-message--error" role="alert">{{ error }}</p>
+{% endfor %}
+
+<div class="mk-editor">
+    <form method="post" enctype="multipart/form-data" class="mk-form" id="promotion-form" novalidate>
+        {% csrf_token %}
+
+        <fieldset class="mk-card">
+            <legend>The promotion</legend>
+            <div class="mk-grid">
+                {% include 'menu/_marketing_field.html' with field=form.title wide=True %}
+                {% include 'menu/_marketing_field.html' with field=form.tagline wide=True %}
+                {% include 'menu/_marketing_field.html' with field=form.badge %}
+                {% include 'menu/_marketing_field.html' with field=form.description wide=True %}
+            </div>
+        </fieldset>
+
+        <fieldset class="mk-card">
+            <legend>Hero photo</legend>
+            {% include 'menu/_marketing_field.html' with field=form.hero_image wide=True %}
+        </fieldset>
+
+        <fieldset class="mk-card">
+            <legend>Pricing</legend>
+            <div class="mk-grid mk-grid--3">
+                {% include 'menu/_marketing_field.html' with field=form.price %}
+                {% include 'menu/_marketing_field.html' with field=form.original_price %}
+                {% include 'menu/_marketing_field.html' with field=form.price_note %}
+            </div>
+        </fieldset>
+
+        <fieldset class="mk-card">
+            <legend>Duration <span class="mk-legend-note">Samoa time</span></legend>
+            <div class="mk-grid">
+                {% include 'menu/_marketing_field.html' with field=form.starts_at %}
+                {% include 'menu/_marketing_field.html' with field=form.ends_at %}
+                {% include 'menu/_marketing_field.html' with field=form.daily_start_time %}
+                {% include 'menu/_marketing_field.html' with field=form.daily_end_time %}
+            </div>
+            <p class="mk-help">The promotion appears on the website at the start time and is hidden automatically once it ends.</p>
+        </fieldset>
+
+        <fieldset class="mk-card">
+            <legend>Fine print &amp; display</legend>
+            <div class="mk-grid">
+                {% include 'menu/_marketing_field.html' with field=form.terms wide=True %}
+                {% include 'menu/_marketing_field.html' with field=form.display_order %}
+                {% include 'menu/_marketing_field.html' with field=form.is_published %}
+            </div>
+        </fieldset>
+
+        <div class="mk-form-actions">
+            <a class="mk-btn mk-btn--ghost" href="{% url 'marketing_panel' %}">Cancel</a>
+            <button type="submit" class="mk-btn mk-btn--primary"><i class="fas fa-floppy-disk" aria-hidden="true"></i> {% if promotion %}Save changes{% else %}Create promotion{% endif %}</button>
+        </div>
+    </form>
+
+    <aside class="mk-preview" aria-label="Homepage preview">
+        <span class="mk-kicker">Homepage preview</span>
+        <article class="mk-preview-card">
+            <div class="mk-preview-media">
+                <img id="pv-image" src="{% if promotion and promotion.hero_image %}{{ promotion.hero_image.url }}{% endif %}" alt=""{% if not promotion or not promotion.hero_image %} hidden{% endif %}>
+                <span class="mk-preview-placeholder" id="pv-placeholder"{% if promotion and promotion.hero_image %} hidden{% endif %}><i class="far fa-image" aria-hidden="true"></i> Hero photo</span>
+                <span class="mk-preview-badge" id="pv-badge"></span>
+            </div>
+            <div class="mk-preview-body">
+                <h2 id="pv-title"></h2>
+                <p id="pv-tagline"></p>
+                <p class="mk-preview-price"><strong id="pv-price"></strong> <s id="pv-was"></s> <small id="pv-note"></small></p>
+            </div>
+        </article>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const form = document.getElementById('promotion-form');
+    const fields = form.elements;
+    const $ = (id) => document.getElementById(id);
+    const money = (value) => {
+        const n = parseFloat(value);
+        if (Number.isNaN(n)) return '';
+        return '$' + (Number.isInteger(n) ? n : n.toFixed(2));
+    };
+
+    function update() {
+        $('pv-title').textContent = fields.title.value || 'Promotion title';
+        $('pv-tagline').textContent = fields.tagline.value;
+        $('pv-badge').textContent = fields.badge.value;
+        $('pv-badge').hidden = !fields.badge.value;
+        $('pv-price').textContent = money(fields.price.value);
+        $('pv-was').textContent = money(fields.original_price.value);
+        $('pv-note').textContent = fields.price_note.value;
+    }
+
+    form.addEventListener('input', update);
+    fields.hero_image.addEventListener('change', () => {
+        const file = fields.hero_image.files[0];
+        if (!file) return;
+        $('pv-image').src = URL.createObjectURL(file);
+        $('pv-image').hidden = false;
+        $('pv-placeholder').hidden = true;
+    });
+    update();
+})();
+</script>
+{% endblock %}

@@ -251,3 +251,62 @@ class OrderItem(models.Model):
         ordering = ['created_at']
 
 
+
+
+class PromotionQuerySet(models.QuerySet):
+    def live(self, now=None):
+        """Published promotions whose run covers `now`."""
+        now = now or timezone.now()
+        return self.filter(is_published=True, starts_at__lte=now, ends_at__gt=now)
+
+
+class Promotion(models.Model):
+    """A time-limited promotion managed by the marketing team and shown on the landing page."""
+    title = models.CharField(max_length=120)
+    tagline = models.CharField(max_length=200, blank=True, help_text="One short line under the title.")
+    description = models.TextField(blank=True, help_text="What's included in the deal.")
+    hero_image = models.ImageField(upload_to='promotions/', help_text="Landscape photo, about 1600×1000px works best.")
+    badge = models.CharField(max_length=30, blank=True, default='Limited time', help_text='e.g. "New", "Weekend only".')
+
+    price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, help_text="Leave blank for deals without a set price.")
+    original_price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, help_text="Normal price, shown crossed out.")
+    price_note = models.CharField(max_length=40, blank=True, help_text='e.g. "each", "per person", "for two".')
+
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    daily_start_time = models.TimeField(blank=True, null=True, help_text="Optional: only available from this time each day.")
+    daily_end_time = models.TimeField(blank=True, null=True, help_text="Optional: only available until this time each day.")
+
+    terms = models.CharField(max_length=300, blank=True, help_text="Fine print, e.g. \"Dine-in only. While stocks last.\"")
+    is_published = models.BooleanField(default=True, help_text="Unpublished promotions never show on the website.")
+    display_order = models.IntegerField(default=0, help_text="Lower numbers show first.")
+
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='promotions')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = PromotionQuerySet.as_manager()
+
+    class Meta:
+        ordering = ['display_order', 'ends_at']
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def savings(self):
+        if self.price is not None and self.original_price and self.original_price > self.price:
+            return self.original_price - self.price
+        return None
+
+    @property
+    def status(self):
+        """One of draft, scheduled, live or ended."""
+        now = timezone.now()
+        if not self.is_published:
+            return 'draft'
+        if now < self.starts_at:
+            return 'scheduled'
+        if now >= self.ends_at:
+            return 'ended'
+        return 'live'
