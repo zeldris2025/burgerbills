@@ -30,7 +30,7 @@
             {% if promo.tagline %}<p class="mk-promo-tagline">{{ promo.tagline }}</p>{% endif %}
             <p class="mk-promo-meta">
                 {% if promo.price is not None %}<span><i class="fas fa-tag" aria-hidden="true"></i> ${{ promo.price|floatformat:"-2" }}{% if promo.original_price %} <s>${{ promo.original_price|floatformat:"-2" }}</s>{% endif %}</span>{% endif %}
-                <span><i class="far fa-calendar" aria-hidden="true"></i> {{ promo.starts_at|date:"D j M, g:i A" }} &rarr; {{ promo.ends_at|date:"D j M, g:i A" }}</span>
+                <span><i class="far fa-calendar" aria-hidden="true"></i> {% if promo.starts_at %}{{ promo.starts_at|date:"D j M, g:i A" }}{% else %}Now{% endif %} &rarr; {% if promo.ends_at %}{{ promo.ends_at|date:"D j M, g:i A" }}{% else %}No end date{% endif %}</span>
                 {% if promo.daily_start_time %}<span><i class="far fa-clock" aria-hidden="true"></i> {{ promo.daily_start_time|time:"g:i A" }}&ndash;{{ promo.daily_end_time|time:"g:i A" }} daily</span>{% endif %}
             </p>
         </div>

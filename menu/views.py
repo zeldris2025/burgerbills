@@ -1494,7 +1494,7 @@ def marketing_panel(request):
     """All promotions, grouped by where they are in their run."""
     promotions = list(Promotion.objects.select_related('created_by'))
     order = {'live': 0, 'scheduled': 1, 'draft': 2, 'ended': 3}
-    promotions.sort(key=lambda promo: (order[promo.status], promo.display_order, promo.ends_at))
+    promotions.sort(key=lambda promo: (order[promo.status], promo.display_order, promo.ends_at is None, promo.ends_at or timezone.now()))
     counts = {status: sum(1 for promo in promotions if promo.status == status) for status in order}
     return render(request, 'menu/marketing_panel.html', {
         'promotions': promotions,

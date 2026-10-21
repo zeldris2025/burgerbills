@@ -548,6 +548,23 @@ class PromotionTests(TestCase):
 		self.assertContains(response, "has to end after it starts")
 		self.assertFalse(Promotion.objects.exists())
 
+	def test_promotion_without_duration_is_live(self):
+		response = self.client.post(reverse("marketing_promotion_create"), {
+			"title": "Always On",
+			"hero_image": _png(),
+			"is_published": "on",
+			"display_order": "0",
+		})
+
+		self.assertRedirects(response, reverse("marketing_panel"))
+		promo = Promotion.objects.get(title="Always On")
+		self.assertIsNone(promo.starts_at)
+		self.assertIsNone(promo.ends_at)
+		self.assertEqual(promo.status, "live")
+		self.assertIn(promo, Promotion.objects.live())
+		self.assertContains(self.client.get(reverse("marketing_panel")), "No end date")
+		self.assertContains(self.client.get("/"), "Always On")
+
 	def test_toggle_and_delete(self):
 		promo = _promotion("Toggle me")
 

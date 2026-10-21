@@ -5,6 +5,7 @@ Proprietary and confidential. Unauthorized copying or distribution is prohibited
 """
 
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
 import qrcode
@@ -257,7 +258,11 @@ class PromotionQuerySet(models.QuerySet):
     def live(self, now=None):
         """Published promotions whose run covers `now`."""
         now = now or timezone.now()
-        return self.filter(is_published=True, starts_at__lte=now, ends_at__gt=now)
+        return self.filter(
+            Q(starts_at__isnull=True) | Q(starts_at__lte=now),
+            Q(ends_at__isnull=True) | Q(ends_at__gt=now),
+            is_published=True,
+        )
 
 
 class Promotion(models.Model):
@@ -272,8 +277,8 @@ class Promotion(models.Model):
     original_price = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, help_text="Normal price, shown crossed out.")
     price_note = models.CharField(max_length=40, blank=True, help_text='e.g. "each", "per person", "for two".')
 
-    starts_at = models.DateTimeField()
-    ends_at = models.DateTimeField()
+    starts_at = models.DateTimeField(blank=True, null=True, help_text="Leave blank to show it straight away.")
+    ends_at = models.DateTimeField(blank=True, null=True, help_text="Leave blank to keep it running until unpublished.")
     daily_start_time = models.TimeField(blank=True, null=True, help_text="Optional: only available from this time each day.")
     daily_end_time = models.TimeField(blank=True, null=True, help_text="Optional: only available until this time each day.")
 
@@ -305,8 +310,8 @@ class Promotion(models.Model):
         now = timezone.now()
         if not self.is_published:
             return 'draft'
-        if now < self.starts_at:
+        if self.starts_at and now < self.starts_at:
             return 'scheduled'
-        if now >= self.ends_at:
+        if self.ends_at and now >= self.ends_at:
             return 'ended'
         return 'live'

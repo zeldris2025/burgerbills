@@ -92,7 +92,7 @@
 
         <div class="promos-track" data-promos-track>
             {% for promo in promotions %}
-            <article class="promo-slide" data-ends-at="{{ promo.ends_at|date:'c' }}" aria-roledescription="slide" aria-labelledby="promo-title-{{ promo.pk }}">
+            <article class="promo-slide"{% if promo.ends_at %} data-ends-at="{{ promo.ends_at|date:'c' }}"{% endif %} aria-roledescription="slide" aria-labelledby="promo-title-{{ promo.pk }}">
                 <div class="promo-media">
                     <img src="{{ promo.hero_image.url }}" alt="{{ promo.title }}"{% if not forloop.first %} loading="lazy"{% endif %}>
                     {% if promo.badge %}<span class="promo-badge"><i class="fas fa-bolt" aria-hidden="true"></i> {{ promo.badge }}</span>{% endif %}
@@ -114,13 +114,17 @@
                     {% endif %}
 
                     <ul class="promo-meta">
+                        {% if promo.starts_at and promo.ends_at %}
                         {% if promo.starts_at|date:"Ymd" == promo.ends_at|date:"Ymd" %}
                         <li><i class="far fa-calendar" aria-hidden="true"></i> {{ promo.starts_at|date:"D j M" }}, {{ promo.starts_at|time:"g:i A" }} &ndash; {{ promo.ends_at|time:"g:i A" }}</li>
                         {% else %}
                         <li><i class="far fa-calendar" aria-hidden="true"></i> {{ promo.starts_at|date:"j M" }} &ndash; {{ promo.ends_at|date:"j M Y" }}</li>
                         {% endif %}
+                        {% elif promo.starts_at %}
+                        <li><i class="far fa-calendar" aria-hidden="true"></i> From {{ promo.starts_at|date:"j M Y" }}</li>
+                        {% endif %}
                         {% if promo.daily_start_time %}<li><i class="far fa-clock" aria-hidden="true"></i> {{ promo.daily_start_time|time:"g:i A" }} &ndash; {{ promo.daily_end_time|time:"g:i A" }} daily</li>{% endif %}
-                        <li class="promo-countdown"><i class="fas fa-hourglass-half" aria-hidden="true"></i> <span data-countdown>Ends {{ promo.ends_at|date:"D j M, g:i A" }}</span></li>
+                        {% if promo.ends_at %}<li class="promo-countdown"><i class="fas fa-hourglass-half" aria-hidden="true"></i> <span data-countdown>Ends {{ promo.ends_at|date:"D j M, g:i A" }}</span></li>{% endif %}
                     </ul>
                     {% if promo.terms %}<p class="promo-terms">{{ promo.terms }}</p>{% endif %}
                 </div>
