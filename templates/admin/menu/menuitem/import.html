@@ -1,0 +1,45 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  &rsaquo; <a href="{% url 'admin:menu_menuitem_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; Import
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if import_errors %}
+    <p class="errornote">Nothing was imported. Fix these problems and try again:</p>
+    <ul class="errorlist">
+      {% for error in import_errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <p>Upload a menu exported from this panel. Items are matched by <strong>category + name</strong>:</p>
+  <ul>
+    <li>Items that already exist are updated with the values in the file.</li>
+    <li>New items (and new categories) are added.</li>
+    <li>Items not in the file are left as they are. Nothing is deleted.</li>
+  </ul>
+  <p>Use the ZIP export to bring photos across. A CSV only updates text, prices and tags.</p>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <fieldset class="module aligned">
+      {% for field in form %}
+        <div class="form-row">
+          {{ field.errors }}
+          {{ field.label_tag }} {{ field }}
+          {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </fieldset>
+    <div class="submit-row">
+      <input type="submit" value="Import" class="default">
+    </div>
+  </form>
+</div>
+{% endblock %}

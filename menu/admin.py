@@ -4,7 +4,16 @@ Copyright © 2026 Charlie Ah Kuoi. All rights reserved.
 Proprietary and confidential. Unauthorized copying or distribution is prohibited.
 """
 
-from django.contrib import admin
+from django import forms
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import path
+from django.utils import timezone
+
+from .menu_transfer import MenuImportError, export_csv, export_zip, import_menu
 from .models import Category, MarqueeSettings, MenuItem, Table, Order, OrderItem, Promotion
 
 
@@ -27,8 +36,16 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ('order', 'name')
 
 
+class MenuImportForm(forms.Form):
+    file = forms.FileField(
+        label='Menu file',
+        help_text='A .zip exported from this panel (includes photos), or a .csv file.',
+    )
+
+
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
+    change_list_template = 'admin/menu/menuitem/change_list.html'
     list_display = ('name', 'category', 'price', 'is_available', 'is_vegetarian', 'is_vegan', 'is_spicy', 'is_gluten_free')
     list_filter = ('category', 'is_available', 'is_vegetarian', 'is_vegan', 'is_spicy', 'is_gluten_free')
     list_editable = ('price', 'is_available')
@@ -56,6 +73,51 @@ class MenuItemAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def get_urls(self):
+        return [
+            path('export/', self.admin_site.admin_view(self.export_view), name='menu_menuitem_export'),
+            path('import/', self.admin_site.admin_view(self.import_view), name='menu_menuitem_import'),
+        ] + super().get_urls()
+
+    def export_view(self, request):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        stamp = timezone.localtime().strftime('%Y-%m-%d')
+        if request.GET.get('format') == 'csv':
+            response = HttpResponse(export_csv(), content_type='text/csv; charset=utf-8')
+            filename = f'burgerbills-menu-{stamp}.csv'
+        else:
+            response = HttpResponse(export_zip(), content_type='application/zip')
+            filename = f'burgerbills-menu-{stamp}.zip'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    def import_view(self, request):
+        if not (self.has_add_permission(request) and self.has_change_permission(request)):
+            raise PermissionDenied
+        form = MenuImportForm(request.POST or None, request.FILES or None)
+        import_errors = []
+        if request.method == 'POST' and form.is_valid():
+            try:
+                counts = import_menu(form.cleaned_data['file'])
+            except MenuImportError as exc:
+                import_errors = exc.errors
+            else:
+                messages.success(
+                    request,
+                    f"Import complete: {counts['created']} item(s) added, {counts['updated']} updated, "
+                    f"{counts['categories_created']} new categor{'y' if counts['categories_created'] == 1 else 'ies'}.",
+                )
+                return redirect('admin:menu_menuitem_changelist')
+        context = {
+            **self.admin_site.each_context(request),
+            'opts': self.model._meta,
+            'title': 'Import menu items',
+            'form': form,
+            'import_errors': import_errors,
+        }
+        return TemplateResponse(request, 'admin/menu/menuitem/import.html', context)
 
 
 @admin.register(Table)

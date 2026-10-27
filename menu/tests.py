@@ -597,3 +597,87 @@ class LandingPromotionTests(TestCase):
 
 		self.assertNotContains(response, 'id="promotions"')
 
+
+
+class MenuTransferAdminTests(TestCase):
+	def setUp(self):
+		admin_user = get_user_model().objects.create_superuser(username="admin", password="password")
+		self.client.force_login(admin_user)
+		self.burgers = Category.objects.create(name="Burgers", icon="🍔", order=1)
+		self.item = MenuItem.objects.create(
+			category=self.burgers,
+			name="Cheese Burger",
+			description="Classic",
+			price="12.50",
+			is_spicy=True,
+			image=_png("cheese.png"),
+		)
+
+	def _upload(self, name, data):
+		return self.client.post(
+			reverse("admin:menu_menuitem_import"),
+			{"file": SimpleUploadedFile(name, data)},
+			follow=True,
+		)
+
+	def test_changelist_shows_buttons(self):
+		response = self.client.get(reverse("admin:menu_menuitem_changelist"))
+
+		self.assertContains(response, reverse("admin:menu_menuitem_export"))
+		self.assertContains(response, reverse("admin:menu_menuitem_import"))
+
+	def test_zip_round_trip_restores_items_and_photos(self):
+		response = self.client.get(reverse("admin:menu_menuitem_export"))
+		self.assertEqual(response["Content-Type"], "application/zip")
+		export = response.content
+		MenuItem.objects.all().delete()
+		Category.objects.all().delete()
+
+		response = self._upload("menu.zip", export)
+
+		self.assertContains(response, "1 item(s) added")
+		item = MenuItem.objects.get(name="Cheese Burger")
+		self.assertEqual(item.category.icon, "🍔")
+		self.assertEqual(str(item.price), "12.50")
+		self.assertTrue(item.is_spicy)
+		self.assertTrue(item.is_available)
+		self.assertTrue(item.image.name.startswith("menu_items/"))
+		with item.image.open("rb") as image_file:
+			self.assertTrue(image_file.read().startswith(b"\x89PNG"))
+
+	def test_csv_import_updates_existing_and_adds_new(self):
+		csv_data = (
+			"category,name,description,price,is_vegan\n"
+			"burgers,cheese burger,Now with pickles,13.00,\n"
+			"Drinks,Milkshake,Vanilla,6,yes\n"
+		).encode()
+
+		response = self._upload("menu.csv", csv_data)
+
+		self.assertContains(response, "1 item(s) added, 1 updated, 1 new category")
+		self.item.refresh_from_db()
+		self.assertEqual(self.item.description, "Now with pickles")
+		self.assertEqual(str(self.item.price), "13.00")
+		self.assertTrue(self.item.image)
+		self.assertTrue(MenuItem.objects.get(name="Milkshake").is_vegan)
+
+	def test_invalid_rows_import_nothing(self):
+		csv_data = (
+			"category,name,price\n"
+			"Drinks,Milkshake,6\n"
+			"Drinks,Soda,cheap\n"
+		).encode()
+
+		response = self._upload("menu.csv", csv_data)
+
+		self.assertContains(response, "Nothing was imported")
+		self.assertContains(response, "Row 3")
+		self.assertFalse(MenuItem.objects.filter(name="Milkshake").exists())
+
+	def test_staff_without_permission_cannot_import(self):
+		staff = get_user_model().objects.create_user(username="staff", password="password", is_staff=True)
+		self.client.force_login(staff)
+
+		response = self.client.get(reverse("admin:menu_menuitem_import"))
+
+		self.assertEqual(response.status_code, 403)
