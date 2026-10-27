@@ -108,9 +108,12 @@ WSGI_APPLICATION = 'burgerbills.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-# On Azure, set SQLITE_PATH to somewhere outside wwwroot (e.g. /home/data/db.sqlite3)
-# so deployments don't overwrite the live database.
-SQLITE_PATH = os.environ.get('SQLITE_PATH', os.path.join(BASE_DIR, 'db.sqlite3'))
+# Azure App Service runs the app from a temporary copy that is replaced on every
+# deploy and restart, so data must live in /home, the only persistent storage.
+ON_AZURE_APP_SERVICE = os.path.isdir('/home/site/wwwroot')
+PERSISTENT_DATA_DIR = '/home/data' if ON_AZURE_APP_SERVICE else BASE_DIR
+
+SQLITE_PATH = os.environ.get('SQLITE_PATH', os.path.join(PERSISTENT_DATA_DIR, 'db.sqlite3'))
 os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)
 
 DATABASES = {
@@ -168,7 +171,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', os.path.join(PERSISTENT_DATA_DIR, 'media'))
 
 STORAGES = {
     'default': {
